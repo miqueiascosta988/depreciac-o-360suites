@@ -309,21 +309,31 @@ select[multiple]{height:110px}
 
 const RULES = {
   // 2) Vida útil padrão (meses) por categoria — configurável
+  // Vida útil (meses) calibrada para o modelo de OPERAÇÃO DA 360SUITES: short-stay de alta
+  // rotatividade (giro muito mais intenso que hotel tradicional ou aluguel de temporada semanal).
+  // Base: benchmarks de administradoras de aluguel de temporada de alta rotatividade (turnover
+  // multi-diário), sempre pela faixa inferior/conservadora quando a fonte dá um intervalo —
+  // móveis estofados 3-6 anos; colchão 5-7 anos (vs. 8-10 anos residencial); roupa de cama 1-2 anos;
+  // grandes eletrodomésticos 6-8 anos; pequenos equipamentos de cozinha ~3 anos; TV/fechadura
+  // digital 5 anos (ciclo padrão de eletrônicos/keyless entry, não é afetado pelo giro de hóspedes).
   usefulLife: {
-    // Mobiliário
-    'Cadeira':36, 'Mesa':60, 'Bancada multiuso':60, 'Sofá':60, 'Poltrona':48, 'Cama':60,
-    'Guarda-roupa':60, 'Armário':60, 'Criado-mudo':60, 'Espelho':60, 'Quadro decorativo':36,
-    'Luminária':60, 'Cortina':36, 'Tapete':36,
-    // Eletrônicos e tecnologia
-    'Televisão':60, 'Ar-condicionado':120, 'Ventilador':60, 'Eletrônico':60, 'Fechadura digital':60,
-    // Eletrodomésticos
-    'Geladeira':120, 'Frigobar':96, 'Micro-ondas':60, 'Máquina de lavar':120, 'Cooktop':96,
-    'Fogão a gás':96, 'Forno elétrico':60, 'Coifa/Exaustor':84, 'Cafeteira':36, 'Liquidificador':36,
+    // Mobiliário — case goods reduzidos de ~8 para ~6 anos por causa do giro alto; estofados 4 anos
+    // (faixa 3-6 anos); cadeira com desgaste de manuseio individual constante
+    'Cadeira':48, 'Mesa':72, 'Bancada multiuso':72, 'Sofá':48, 'Poltrona':48, 'Cama':72,
+    'Guarda-roupa':72, 'Armário':72, 'Criado-mudo':72, 'Espelho':60, 'Quadro decorativo':36,
+    'Luminária':60, 'Cortina':48, 'Tapete':36,
+    // Eletrônicos e tecnologia — 5 anos: ciclo de vida do equipamento em si, não do giro de hóspedes
+    'Televisão':60, 'Ar-condicionado':96, 'Ventilador':60, 'Eletrônico':60, 'Fechadura digital':60,
+    // Eletrodomésticos — grandes: 6-8 anos; pequenos/manuseio direto do hóspede: ~3 anos ou menos
+    'Geladeira':84, 'Frigobar':72, 'Micro-ondas':48, 'Máquina de lavar':84, 'Cooktop':84,
+    'Fogão a gás':84, 'Forno elétrico':60, 'Coifa/Exaustor':84, 'Cafeteira':36, 'Liquidificador':36,
     'Sanduicheira/Grill':36, 'Ferro de passar':24, 'Secador de cabelo':24,
-    // Enxoval e cama
-    'Colchão':36, 'Protetor de colchão':24, 'Travesseiro':18, 'Protetor de travesseiro':18,
-    'Edredom':24, 'Manta/Cobertor':24, 'Lençol':24, 'Toalha':18, 'Enxoval':24,
-    // Cozinha e utensílios
+    // Enxoval e cama — colchão 5 anos (giro multi-diário reduz frente aos 5-7 do turnover semanal);
+    // roupa de cama e protetores calibrados pelo ciclo real de lavagem entre hóspedes
+    'Colchão':60, 'Protetor de colchão':24, 'Travesseiro':12, 'Protetor de travesseiro':18,
+    'Edredom':24, 'Manta/Cobertor':24, 'Lençol':18, 'Toalha':18, 'Enxoval':24,
+    // Cozinha e utensílios — equipamento de cozinha de giro alto ~3 anos; louças/utensílios
+    // pequenos com maior taxa de quebra/perda entre hóspedes
     'Panela':36, 'Louça/Utensílio de mesa':24, 'Utensílio doméstico':24,
     'Outro':36
   },
