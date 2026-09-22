@@ -477,12 +477,19 @@ const Engine = (function(){
 
     const reachedLife = usedMonths >= adjustedLifeMonths;
 
+    // Valor final de referência — o número que efetivamente deve ser cobrado/reembolsado.
+    // Prioridade: 1) reposição completa (custo total menos residual já apurado);
+    // 2) dano (parcial/extraordinário/ausente), quando não há reposição formal;
+    // 3) desgaste natural — apenas o valor residual, sem cobrança.
+    const referenceValue = replacementTotal!=null ? refundReference
+      : (damageValue ? damageValue : residual);
+
     return {
       baseLife, qF, iF, factorProduct, adjustedLifeMonths,
       usedMonths, usedMonthsClamped, lifeFraction, initialLoss, accumulatedDepPct,
       baseValue, afterInitial, residual, depreciatedValue, totalDepPct,
       residualMinValue, reachedLife, occupancyNote,
-      damageValue, damageNote, replacementTotal, refundReference,
+      damageValue, damageNote, replacementTotal, refundReference, referenceValue,
       humanUsed: humanTime(usedMonths)
     };
   }
@@ -762,7 +769,7 @@ function updateResultPanel(){
   document.getElementById('bd-base').textContent = brl(r.baseValue);
   document.getElementById('bd-dep').textContent = brl(r.depreciatedValue)+' ('+(r.totalDepPct*100).toFixed(1)+'%)';
   document.getElementById('bd-dano').textContent = r.damageValue? brl(r.damageValue) : '—';
-  document.getElementById('bd-total').textContent = r.replacementTotal!=null ? brl(r.replacementTotal) : brl(r.residual);
+  document.getElementById('bd-total').textContent = brl(r.referenceValue);
   document.getElementById('rp-sub').textContent = r.reachedLife ? 'Bem atingiu a vida útil estimada' : 'Valor de referência após depreciação';
 
   const kDep = document.getElementById('kpi-dep');
@@ -806,7 +813,7 @@ Depreciação acumulada = (% vida útil consumida) ^ 0,72 = ${(r.accumulatedDepP
       <li><b>Depreciação acumulada:</b> ${(r.totalDepPct*100).toFixed(2)}% → ${brl(r.depreciatedValue)}.</li>
       <li><b>Valor residual estimado:</b> ${brl(r.residual)}${r.residualMinValue>0?` (respeitando piso mínimo de ${brl(r.residualMinValue)})`:''}.</li>
       <li><b>Análise de dano:</b> ${r.damageNote}${r.damageValue?` Valor de referência do dano: ${brl(r.damageValue)}.`:''}</li>
-      <li><b>Valor final de referência:</b> ${r.replacementTotal!=null ? `total de reposição ${brl(r.replacementTotal)}, com valor de referência para reembolso de ${brl(r.refundReference)} (após dedução do residual já apurado).` : brl(r.residual)+'.'}</li>
+      <li><b>Valor final de referência:</b> ${r.replacementTotal!=null ? `total de reposição ${brl(r.replacementTotal)}, com valor de referência para reembolso de ${brl(r.refundReference)} (após dedução do residual já apurado).` : (r.damageValue ? `${brl(r.damageValue)} (valor de referência do dano, acima do desgaste natural).` : brl(r.residual)+'.')}</li>
     </ol>
   </details>
   ${flags}
