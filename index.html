@@ -211,9 +211,6 @@ th{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--i
 
 .kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
 @media (max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
-.card .kpi-grid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
-.card .kpi{padding:14px}
-.card .kpi .k-val{font-size:19px}
 .kpi{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
 .kpi .k-label{font-size:11.5px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:.02em}
 .kpi .k-val{font-family:'Rubik',sans-serif; font-size:24px; font-weight:700; margin-top:4px}
@@ -250,7 +247,7 @@ select[multiple]{height:110px}
 
   <div class="notice notice-info noprint">
     <span>ℹ️</span>
-    <div><b>Não é laudo pericial nem avaliação oficial.</b> Esta calculadora aplica a mesma metodologia usada pela 360Suites para estimar, de forma justa e transparente, quanto do valor do seu bem ainda resta considerando o tempo e a intensidade de uso — cada etapa do cálculo é explicada na "Memória de cálculo", ao final. Não constitui avaliação contábil, fiscal ou jurídica.</div>
+    <div><b>Não é laudo pericial nem avaliação oficial.</b> Esta calculadora oferece uma estimativa técnica de valor residual/reposição para os bens da sua unidade 360Suites, útil para consulta, manutenção e eventuais negociações de reposição — não constitui avaliação contábil, fiscal ou jurídica.</div>
   </div>
 
   <!-- ===================== CALCULADORA ===================== -->
@@ -279,7 +276,8 @@ select[multiple]{height:110px}
           <div class="bd-row"><span class="k">Dano extraordinário</span><span class="v mono" id="bd-dano">—</span></div>
           <div class="bd-row"><span class="k">Total reposição</span><span class="v mono" id="bd-total">—</span></div>
         </div>
-        <button class="btn btn-primary" id="btn-copy" style="width:100%">Copiar memória de cálculo</button>
+        <button class="btn btn-primary" id="btn-save" style="width:100%">Salvar análise</button>
+        <button class="btn btn-outline" id="btn-copy" style="width:100%">Copiar memória de cálculo</button>
         <button class="btn btn-outline" id="btn-print" style="width:100%">Imprimir / salvar em PDF</button>
       </div>
     </div>
@@ -325,7 +323,6 @@ const RULES = {
   occupancyBands: [ {max:40,label:'Baixa'}, {max:70,label:'Normal'}, {max:85,label:'Alta'}, {max:100,label:'Muito alta'} ],
   initialLossDefault: 0.05,     // Fase 1 — perda inicial padrão ao entrar em uso (5%)
   residualMinDefault: 0.00,     // Valor residual mínimo padrão (0%)
-  defaultAnnualIndex: 6,        // Índice de correção monetária padrão (% a.a.) aplicado automaticamente ao valor pago
   // Limites de segurança para não gerar resultados extremos
   minFactorProduct: 0.5,
   maxFactorProduct: 1.6
@@ -523,53 +520,101 @@ function renderSteps(){
     <div class="card">
       <div class="grid2">
         <div class="field">
+          <label for="in-unidade">Código da unidade</label>
+          <input id="in-unidade" placeholder="Ex.: PM605" value="${f.unidade}">
+        </div>
+        <div class="field">
           <label for="in-categoria">Categoria do bem</label>
           <select id="in-categoria">
             ${CATEGORIES.map(c=>`<option value="${c}" ${c===f.categoria?'selected':''}>${c}</option>`).join('')}
           </select>
         </div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        ${f.categoria==='Outro' ? `
+        <div class="field">
+          <label for="in-cat-custom">Categoria personalizada</label>
+          <input id="in-cat-custom" placeholder="Descreva a categoria" value="${f.categoriaCustom}">
+        </div>` : `<div></div>`}
         <div class="field">
           <label for="in-marca">Marca/modelo <span class="tip">(opcional)</span></label>
           <input id="in-marca" placeholder="Ex.: Tok&Stok — mod. Eames" value="${f.marca}">
         </div>
       </div>
-      ${f.categoria==='Outro' ? `
-      <div class="field" style="margin-top:14px">
-        <label for="in-cat-custom">Categoria personalizada</label>
-        <input id="in-cat-custom" placeholder="Descreva a categoria" value="${f.categoriaCustom}">
-      </div>` : ''}
       ${f.categoria==='Enxoval' ? `<div class="notice notice-info" style="margin-top:14px"><span>🧺</span><div><b>Enxoval é um kit de itens com desgastes diferentes entre si.</b> Sempre que possível, valide peça por peça (Lençol, Toalha, Edredom, Travesseiro etc.) — cada uma tem vida útil própria. Use "Enxoval" apenas para um conjunto adquirido e substituído sempre em bloco, na mesma data.</div></div>` : ''}
       <div class="field" style="margin-top:14px">
-        <label for="in-descricao">Descrição do bem/item</label>
+        <label for="in-descricao">Descrição do bem</label>
         <textarea id="in-descricao" rows="2" placeholder="Ex.: Conjunto com 2 cadeiras de jantar">${f.descricao}</textarea>
       </div>
       <div class="grid2" style="margin-top:14px">
         <div class="field">
-          <label for="in-data-aq">Data de aquisição</label>
-          <input type="date" id="in-data-aq" value="${f.dataAquisicao}">
+          <label for="in-proprietario">Proprietário <span class="tip">(opcional)</span></label>
+          <input id="in-proprietario" placeholder="Nome do proprietário" value="${f.proprietario}">
         </div>
+        <div class="field">
+          <label for="in-responsavel">Preenchido por <span class="tip">(proprietário ou equipe 360Suites)</span></label>
+          <input id="in-responsavel" placeholder="Seu nome" value="${f.responsavel}">
+        </div>
+      </div>
+    </div>`;
+  }
+
+  {
+    html += `
+    <div class="section-eyebrow"><div class="num">2</div><div class="lbl">Valores</div></div>
+    <div class="card">
+      <p class="hint">A ferramenta prioriza o valor de reposição atual para o cálculo do residual.</p>
+      <div class="grid2">
         <div class="field">
           <label for="in-valor-orig">Valor pago originalmente</label>
           <input id="in-valor-orig" placeholder="R$ 0,00" value="${f.valorOriginal}">
         </div>
+        <div class="field">
+          <label for="in-data-aq">Data da aquisição</label>
+          <input type="date" id="in-data-aq" value="${f.dataAquisicao}">
+        </div>
       </div>
-      <div class="notice notice-info" style="margin-top:14px"><span>💡</span><div><b>Como chegamos ao valor de hoje:</b> aplicamos a correção monetária oficial (${RULES.defaultAnnualIndex}% a.a.) sobre o valor pago para estimar o custo de reposição atual — isso apenas atualiza o preço para hoje, sem representar ganho ou perda real do bem. É a partir desse valor atualizado que a depreciação pelo uso é calculada na próxima etapa.</div></div>
+      <div class="field" style="margin-top:14px">
+        <label for="in-valor-reposicao">Valor de reposição atual <span class="tip">— quanto custaria hoje um bem equivalente, novo?</span></label>
+        <input id="in-valor-reposicao" placeholder="R$ 0,00" value="${f.valorReposicao}">
+      </div>
+      <label class="check" style="margin-top:16px">
+        <input type="checkbox" id="in-usar-correcao" ${f.usarCorrecao?'checked':''}>
+        Utilizar correção monetária sobre o valor original (caso não haja valor de reposição atual)
+      </label>
+      ${f.usarCorrecao?`
+      <div class="grid2" style="margin-top:12px">
+        <div class="field">
+          <label for="in-indice">Índice anual de correção (%)</label>
+          <input type="number" id="in-indice" step="0.1" value="${f.indiceAnual}">
+        </div>
+        <div class="field">
+          <label>Valor atualizado (calculado)</label>
+          <input class="mono" value="${brl(correctedValue())}" readonly style="background:var(--surface-2)">
+        </div>
+      </div>
+      <div class="notice notice-info" style="margin-top:12px"><span>⚠️</span><div><b>Correção monetária ≠ valorização.</b> Ela apenas atualiza a base monetária antes do cálculo de depreciação — não representa ganho de valor do bem.</div></div>
+      `:''}
     </div>`;
   }
 
   {
     const life = effectiveLife();
     html += `
-    <div class="section-eyebrow"><div class="num">2</div><div class="lbl">Tempo de uso e vida útil</div></div>
+    <div class="section-eyebrow"><div class="num">3</div><div class="lbl">Tempo de uso e vida útil</div></div>
     <div class="card">
       <p class="hint">Nunca arredondamos período parcial para ano completo.</p>
-      <div class="grid2">
+      <div class="grid3">
         <div class="field">
-          <label for="in-inicio-uso">Data de início de utilização <span class="tip">(opcional — se diferente da aquisição)</span></label>
+          <label for="in-data-aq2">Data de aquisição</label>
+          <input type="date" id="in-data-aq2" value="${f.dataAquisicao}">
+        </div>
+        <div class="field">
+          <label for="in-inicio-uso">Data de início de utilização</label>
           <input type="date" id="in-inicio-uso" value="${f.dataInicioUso}">
         </div>
         <div class="field">
-          <label for="in-data-ref">Data de referência <span class="tip">(hoje, por padrão)</span></label>
+          <label for="in-data-ref">Data de referência</label>
           <input type="date" id="in-data-ref" value="${f.dataReferencia}">
         </div>
       </div>
@@ -581,13 +626,13 @@ function renderSteps(){
         <label for="in-vida-custom">Vida útil manual (meses) <span class="tip">— opcional, sobrescreve a tabela padrão</span></label>
         <input type="number" id="in-vida-custom" placeholder="Deixe em branco para usar o padrão" value="${f.vidaUtilCustom}">
       </div>
-      <div class="notice notice-info" style="margin-top:14px"><span>📋</span><div><b>Tabela de vida útil configurável.</b> Os valores acima são padrões da 360Suites para estimativa de reposição — não representam regra contábil ou fiscal.</div></div>
+      <div class="notice notice-info" style="margin-top:14px"><span>📋</span><div><b>Tabela de vida útil configurável.</b> Os valores acima são padrões internos da 360Suites para gestão patrimonial — não representam regra contábil ou fiscal.</div></div>
     </div>`;
   }
 
   {
     html += `
-    <div class="section-eyebrow"><div class="num">3</div><div class="lbl">Qualidade e intensidade de uso</div></div>
+    <div class="section-eyebrow"><div class="num">4</div><div class="lbl">Qualidade e intensidade de uso</div></div>
     <div class="card">
       <p class="hint">Esses fatores ajustam a vida útil esperada do bem.</p>
       <div class="field">
@@ -613,7 +658,7 @@ function renderSteps(){
 
   {
     html += `
-    <div class="section-eyebrow"><div class="num">4</div><div class="lbl">Condição do bem</div></div>
+    <div class="section-eyebrow"><div class="num">5</div><div class="lbl">Condição do bem</div></div>
     <div class="card">
       <p class="hint">A condição classifica o estado atual; o dano extraordinário é analisado separadamente.</p>
       <div class="field">
@@ -623,7 +668,7 @@ function renderSteps(){
         </div>
       </div>
     </div>
-    <div class="section-eyebrow"><div class="num">5</div><div class="lbl">Análise de condição</div></div>
+    <div class="section-eyebrow"><div class="num">6</div><div class="lbl">Análise de condição</div></div>
     <div class="card">
       <p class="hint">O estado atual do bem é compatível com o desgaste esperado pelo tempo e intensidade de uso?</p>
       <div class="chiprow" id="chip-desgaste">
@@ -645,17 +690,24 @@ function renderSteps(){
 
   {
     html += `
-    <div class="section-eyebrow"><div class="num">6</div><div class="lbl">Evolução do valor ao longo do tempo</div></div>
+    <div class="section-eyebrow"><div class="num">7</div><div class="lbl">Necessidade de reposição</div></div>
     <div class="card">
-      <p class="hint">A curva mostra como o valor do bem cai de forma mais acentuada no início do uso e desacelera com o tempo, até se aproximar do fim da vida útil.</p>
-      <div class="kpi-grid" style="margin-bottom:16px">
-        <div class="kpi"><div class="k-label">Depreciação acumulada</div><div class="k-val mono" id="kpi-dep">—</div></div>
-        <div class="kpi"><div class="k-label">Perda média por mês</div><div class="k-val mono" id="kpi-perda-mes">—</div></div>
-        <div class="kpi"><div class="k-label">Vida útil efetiva</div><div class="k-val mono" id="kpi-vu-efetiva">—</div></div>
-        <div class="kpi"><div class="k-label">Vida útil restante</div><div class="k-val mono" id="kpi-vu-restante">—</div></div>
+      <p class="hint">Custos adicionais só entram no total se forem informados.</p>
+      <label class="check">
+        <input type="checkbox" id="in-precisa-reposicao" ${f.precisaReposicao?'checked':''}>
+        Bem precisa ser substituído?
+      </label>
+      ${f.precisaReposicao?`
+      <div class="grid2" style="margin-top:14px">
+        <div class="field"><label for="in-frete">Frete</label><input id="in-frete" placeholder="R$ 0,00" value="${f.frete}"></div>
+        <div class="field"><label for="in-montagem">Montagem</label><input id="in-montagem" placeholder="R$ 0,00" value="${f.montagem}"></div>
+        <div class="field"><label for="in-instalacao">Instalação</label><input id="in-instalacao" placeholder="R$ 0,00" value="${f.instalacao}"></div>
+        <div class="field"><label for="in-outros">Outros custos comprovados</label><input id="in-outros" placeholder="R$ 0,00" value="${f.outrosCustos}"></div>
+      </div>`:''}
+      <div class="grid2" style="margin-top:16px">
+        <div class="field"><label for="in-residual-min">Valor residual mínimo (%) <span class="tip">padrão: 0%</span></label><input type="number" id="in-residual-min" value="${f.residualMinPct}"></div>
+        <div class="field"><label for="in-perda-inicial">Perda inicial de uso (%) <span class="tip">padrão: 5%</span></label><input type="number" id="in-perda-inicial" value="${f.initialLossPct}"></div>
       </div>
-      <canvas id="chart-curve" width="640" height="260" style="width:100%; height:auto"></canvas>
-      <div class="legend" id="chart-curve-legend"></div>
     </div>
     <div id="memoria-container"></div>
     `;
@@ -670,9 +722,9 @@ function renderSteps(){
 function correctedValue(){
   const f = state.form;
   const orig = parseBRL(f.valorOriginal);
-  if(!f.dataAquisicao) return orig;
+  if(!f.usarCorrecao || !f.dataAquisicao) return orig;
   const years = Engine.monthsBetween(toDate(f.dataAquisicao), toDate(f.dataReferencia))/12;
-  const idx = RULES.defaultAnnualIndex/100;
+  const idx = (f.indiceAnual||0)/100;
   return orig * Math.pow(1+idx, years);
 }
 
@@ -686,7 +738,7 @@ function effectiveLife(){
 
 function currentInput(){
   const f = state.form;
-  const baseValue = correctedValue();
+  const baseValue = parseBRL(f.valorReposicao) || correctedValue();
   return {
     category: f.categoria, quality: f.qualidade, intensity: f.intensidade,
     occupancyPct: f.ocupacao!==''? +f.ocupacao : null,
@@ -699,10 +751,10 @@ function currentInput(){
     damageType: f.analiseDesgaste,
     damagePct: f.danoPct? +f.danoPct : null,
     damageValueManual: f.danoValor? parseBRL(f.danoValor) : null,
-    residualMinPct: RULES.residualMinDefault*100,
-    initialLossPct: RULES.initialLossDefault*100,
-    needsReplacement: false,
-    replacementCosts: { frete:0, montagem:0, instalacao:0, outros:0 }
+    residualMinPct: f.residualMinPct!==''? +f.residualMinPct : 0,
+    initialLossPct: f.initialLossPct!==''? +f.initialLossPct : 5,
+    needsReplacement: f.precisaReposicao,
+    replacementCosts: { frete:parseBRL(f.frete), montagem:parseBRL(f.montagem), instalacao:parseBRL(f.instalacao), outros:parseBRL(f.outrosCustos) }
   };
 }
 
@@ -718,16 +770,6 @@ function updateResultPanel(){
   document.getElementById('bd-dano').textContent = r.damageValue? brl(r.damageValue) : '—';
   document.getElementById('bd-total').textContent = r.replacementTotal!=null ? brl(r.replacementTotal) : brl(r.residual);
   document.getElementById('rp-sub').textContent = r.reachedLife ? 'Bem atingiu a vida útil estimada' : 'Valor de referência após depreciação';
-
-  const kDep = document.getElementById('kpi-dep');
-  if(kDep){
-    kDep.textContent = (r.totalDepPct*100).toFixed(1)+'%';
-    const perdaMes = r.usedMonths>0 ? r.depreciatedValue/r.usedMonths : 0;
-    document.getElementById('kpi-perda-mes').textContent = brl(perdaMes);
-    document.getElementById('kpi-vu-efetiva').textContent = r.adjustedLifeMonths.toFixed(1)+' meses';
-    const restante = Math.max(0, r.adjustedLifeMonths - r.usedMonths);
-    document.getElementById('kpi-vu-restante').textContent = restante.toFixed(1)+' meses';
-  }
   return r;
 }
 
@@ -747,8 +789,8 @@ function renderMemoria(){
   <details class="memoria" open>
     <summary>Memória de cálculo</summary>
     <ol>
-      <li><b>Valor base utilizado:</b> ${brl(r.baseValue)} (valor pago de ${brl(parseBRL(f.valorOriginal))}, corrigido monetariamente para o valor de reposição de hoje).</li>
-      <li><b>Correção monetária:</b> aplicada a ${RULES.defaultAnnualIndex}% a.a. sobre o valor pago — a correção apenas atualiza o preço para hoje, não representa valorização do bem.</li>
+      <li><b>Valor base utilizado:</b> ${brl(r.baseValue)} ${f.usarCorrecao && !parseBRL(f.valorReposicao) ? '(valor original corrigido monetariamente)' : '(valor de reposição atual)'}.</li>
+      <li><b>Correção monetária:</b> ${f.usarCorrecao ? `aplicada a ${f.indiceAnual}% a.a. sobre o valor original de ${brl(parseBRL(f.valorOriginal))}, resultando em ${brl(correctedValue())} — a correção não representa valorização do bem.` : 'não utilizada — valor de reposição atual informado diretamente.'}</li>
       <li><b>Vida útil considerada:</b> base de ${r.baseLife} meses para a categoria "${f.categoria}"${f.vidaUtilCustom?' (sobrescrita manualmente)':''}, ajustada pelos fatores de qualidade e intensidade para ${r.adjustedLifeMonths.toFixed(1)} meses.</li>
       <li><b>Fatores aplicados:</b> qualidade "${f.qualidade}" (×${r.qF}) e intensidade "${f.intensidade}" (×${r.iF}) — produto combinado ×${r.factorProduct.toFixed(2)}.</li>
       <li><b>Tempo de uso:</b> ${Engine.humanTime(r.usedMonths)} (${r.usedMonths.toFixed(1)} meses), de ${fmtDate(toDate(f.dataInicioUso)||toDate(f.dataAquisicao))} até ${fmtDate(toDate(f.dataReferencia))}.</li>
@@ -779,71 +821,6 @@ Depreciação acumulada = (% vida útil consumida) ^ 0,72 = ${(r.accumulatedDepP
     </table></div>
   </div>`:''}
   `;
-  drawDepreciationCurve(r);
-}
-
-/* Curva de depreciação — replica o gráfico não linear de valor x tempo (referência Xvantage) */
-function drawDepreciationCurve(r){
-  const canvas = document.getElementById('chart-curve');
-  if(!canvas) return;
-  const {ctx,w,h} = setupCanvas(canvas);
-  ctx.clearRect(0,0,w,h);
-  const ink = getCSS('--ink-soft'), primary = getCSS('--primary'), line = getCSS('--line'), surface2 = getCSS('--surface-2');
-  const padL = 54, padR = 16, padT = 18, padB = 32;
-  const plotW = w - padL - padR, plotH = h - padT - padB;
-  const lifeMonths = Math.max(1, r.adjustedLifeMonths);
-  const baseValue = r.baseValue || 0;
-
-  // eixo
-  ctx.strokeStyle = line; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, h-padB); ctx.lineTo(w-padR, h-padB); ctx.stroke();
-
-  // grade horizontal + labels de valor
-  ctx.font = '10px Rubik, sans-serif'; ctx.fillStyle = ink; ctx.textAlign = 'right';
-  for(let i=0;i<=4;i++){
-    const val = baseValue * (1 - i/4);
-    const y = padT + (plotH*i/4);
-    ctx.strokeStyle = surface2; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
-    ctx.fillText(brl(val).replace('R$',''), padL-6, y+3);
-  }
-
-  // curva: Valor(t) = base * (1-perdaInicial) * (1 - (t/vidaUtil)^0.72), 0<=t<=vidaUtil
-  const steps = 60;
-  ctx.strokeStyle = primary; ctx.lineWidth = 2.5; ctx.beginPath();
-  for(let i=0;i<=steps;i++){
-    const t = (lifeMonths*i)/steps;
-    const frac = Math.min(1, t/lifeMonths);
-    const dep = Engine.depreciationCurve(frac);
-    const val = baseValue * (1-r.initialLoss) * (1-dep);
-    const x = padL + (plotW*i)/steps;
-    const y = padT + plotH * (1 - (val/(baseValue||1)));
-    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
-
-  // área sob a curva
-  ctx.lineTo(padL+plotW, h-padB); ctx.lineTo(padL, h-padB); ctx.closePath();
-  ctx.fillStyle = primary + '1A'; ctx.fill();
-
-  // marcador "hoje"
-  const fracNow = Math.min(1, r.usedMonths/lifeMonths);
-  const xNow = padL + plotW*fracNow;
-  const yNow = padT + plotH * (1 - (r.residual/(baseValue||1)));
-  ctx.strokeStyle = ink; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(xNow,padT); ctx.lineTo(xNow,h-padB); ctx.stroke(); ctx.setLineDash([]);
-  ctx.beginPath(); ctx.arc(xNow,yNow,5,0,Math.PI*2); ctx.fillStyle = primary; ctx.fill();
-  ctx.strokeStyle = getCSS('--surface'); ctx.lineWidth=2; ctx.stroke();
-
-  // eixo x labels (meses)
-  ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.font = '10px Rubik, sans-serif';
-  [0,0.25,0.5,0.75,1].forEach(p=>{
-    const x = padL + plotW*p;
-    ctx.fillText(Math.round(lifeMonths*p)+'m', x, h-padB+16);
-  });
-
-  const legend = document.getElementById('chart-curve-legend');
-  if(legend){
-    legend.innerHTML = `<span><span class="sw" style="background:${primary}"></span>Valor estimado do bem</span><span><span class="sw" style="background:${ink}"></span>Hoje — ${Math.round(r.usedMonths)} meses de uso, valor estimado ${brl(r.residual)}</span>`;
-  }
 }
 
 function attachStepEvents(){
@@ -851,12 +828,15 @@ function attachStepEvents(){
   const $ = id=>document.getElementById(id);
   const bind = (id,key,transform)=>{ const e=$(id); if(e) e.addEventListener('input', ()=>{ f[key]= transform?transform(e.value):e.value; refreshLive(); }); };
 
-  bind('in-cat-custom','categoriaCustom'); bind('in-marca','marca');
-  bind('in-descricao','descricao');
+  bind('in-unidade','unidade'); bind('in-cat-custom','categoriaCustom'); bind('in-marca','marca');
+  bind('in-descricao','descricao'); bind('in-proprietario','proprietario'); bind('in-responsavel','responsavel');
   const catEl = $('in-categoria'); if(catEl) catEl.addEventListener('change', e=>{ f.categoria=e.target.value; renderSteps(); });
 
-  bind('in-data-aq','dataAquisicao'); bind('in-valor-orig','valorOriginal');
+  bind('in-valor-orig','valorOriginal'); bind('in-data-aq','dataAquisicao'); bind('in-valor-reposicao','valorReposicao');
+  const corEl = $('in-usar-correcao'); if(corEl) corEl.addEventListener('change', e=>{ f.usarCorrecao=e.target.checked; renderSteps(); });
+  bind('in-indice','indiceAnual', v=>+v);
 
+  bind('in-data-aq2','dataAquisicao', v=>{ refreshLive(); return v; });
   bind('in-inicio-uso','dataInicioUso');
   bind('in-data-ref','dataReferencia');
   bind('in-vida-custom','vidaUtilCustom');
@@ -868,9 +848,14 @@ function attachStepEvents(){
   const cEl=$('chip-condicao'); if(cEl) cEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.condicao=c.dataset.val; renderSteps(); }));
   const dEl=$('chip-desgaste'); if(dEl) dEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.analiseDesgaste=c.dataset.val; renderSteps(); }));
   bind('in-dano-pct','danoPct'); bind('in-dano-valor','danoValor'); bind('in-dano-valor2','danoValor');
+
+  const repEl=$('in-precisa-reposicao'); if(repEl) repEl.addEventListener('change', e=>{ f.precisaReposicao=e.target.checked; renderSteps(); });
+  bind('in-frete','frete'); bind('in-montagem','montagem'); bind('in-instalacao','instalacao'); bind('in-outros','outrosCustos');
+  bind('in-residual-min','residualMinPct'); bind('in-perda-inicial','initialLossPct');
+
 }
 
-function refreshLive(){ renderMemoria(); }
+function refreshLive(){ updateResultPanel(); }
 
 /* ------------------------------- TABS ------------------------------- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -894,6 +879,34 @@ const History = {
   updateStatus(id,status){ const list=this.load(); const it=list.find(i=>i.id===id); if(it){ it.status=status; this.save(list); } return list; },
   remove(id){ const list=this.load().filter(i=>i.id!==id); this.save(list); return list; }
 };
+
+document.getElementById('btn-save').addEventListener('click', ()=>{
+  const f = state.form;
+  const r = Engine.compute(currentInput());
+  const item = {
+    id: uid(),
+    unidade: f.unidade||'—',
+    proprietario: f.proprietario||'',
+    bem: f.descricao || f.categoria,
+    categoria: f.categoria==='Outro'&&f.categoriaCustom? f.categoriaCustom : f.categoria,
+    dataAquisicao: f.dataAquisicao,
+    tempoUsoMeses: round2(r.usedMonths),
+    valorOriginal: parseBRL(f.valorOriginal),
+    valorAtualizado: round2(correctedValue()),
+    valorReposicao: round2(r.baseValue),
+    vidaUtil: round2(r.adjustedLifeMonths),
+    depreciacaoPct: round2(r.totalDepPct*100),
+    valorResidual: round2(r.residual),
+    condicao: f.condicao,
+    dano: r.damageValue? round2(r.damageValue) : 0,
+    valorReferencia: round2(r.replacementTotal!=null? r.refundReference : r.residual),
+    responsavel: f.responsavel||'',
+    data: new Date().toISOString(),
+    status:'Em análise'
+  };
+  History.add(item);
+  alert('Análise salva no histórico como '+item.id+'.');
+});
 
 document.getElementById('btn-print').addEventListener('click', ()=>{ window.print(); });
 
