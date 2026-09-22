@@ -458,6 +458,11 @@ const Engine = (function(){
       damageValue = Math.max(0, baseValue - depreciatedValue) - residual + residual; // = residual restante como piso
       damageValue = input.damageValueManual!=null ? input.damageValueManual : (baseValue - depreciatedValue);
       damageNote = 'Dano extraordinário: referência de reposição preserva o valor já consumido pelo uso (não é o valor de um bem novo).';
+    } else if(input.damageType === 'ausente'){
+      // Item não localizado na vistoria: tratado como o grau máximo de perda (mesma fórmula do dano
+      // extraordinário), preservando o desconto pelo tempo em que o bem esteve de fato na unidade.
+      damageValue = input.damageValueManual!=null ? input.damageValueManual : (baseValue - depreciatedValue);
+      damageNote = 'Item ausente/não localizado: tratado como dano extraordinário — referência de reposição preserva o valor já consumido pelo tempo em que o bem esteve na unidade (não é o valor de um bem novo).';
     } else {
       damageNote = 'Desgaste compatível com o uso — sem cobrança adicional.';
     }
@@ -651,16 +656,20 @@ function renderSteps(){
     html += `
     <div class="section-eyebrow"><div class="num">4</div><div class="lbl">Condição do bem</div></div>
     <div class="card">
-      <p class="hint">A condição classifica o estado atual; o dano extraordinário é analisado separadamente.</p>
+      <p class="hint">A condição classifica o estado atual; o dano extraordinário é analisado separadamente. Se o item não foi encontrado na unidade no momento da vistoria, selecione "Ausente".</p>
       <div class="field">
         <label>Condição atual</label>
         <div class="chiprow" id="chip-condicao">
-          ${['Excelente','Bom','Regular','Ruim','Danificado'].map(c=>`<button class="chip ${c===f.condicao?'sel':''}" data-val="${c}">${c}</button>`).join('')}
+          ${['Excelente','Bom','Regular','Ruim','Danificado','Ausente'].map(c=>`<button class="chip ${c===f.condicao?'sel':''}" data-val="${c}">${c}</button>`).join('')}
         </div>
       </div>
     </div>
     <div class="section-eyebrow"><div class="num">5</div><div class="lbl">Análise de condição</div></div>
     <div class="card">
+      ${f.condicao==='Ausente'?`
+      <div class="notice notice-warn"><span>📦</span><div><b>Item ausente (não localizado na vistoria).</b> Como não é possível observar o desgaste de um item que não está na unidade, ele é tratado como dano extraordinário — o valor de referência considera a última condição registrada em vistoria anterior (ou "Bom", como padrão conservador quando não há registro) e desconta a depreciação já consumida pelo tempo em que o item esteve na unidade. Nunca se cobra o valor de um bem novo.</div></div>
+      <div class="field"><label for="in-dano-valor2">Valor manual de referência (opcional — sobrescreve o cálculo automático)</label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
+      `:`
       <p class="hint">O estado atual do bem é compatível com o desgaste esperado pelo tempo e intensidade de uso?</p>
       <div class="chiprow" id="chip-desgaste">
         <button class="chip ${f.analiseDesgaste==='sim'?'sel':''}" data-val="sim">Sim — desgaste natural</button>
@@ -676,6 +685,7 @@ function renderSteps(){
       <div class="notice notice-warn"><span>⚠️</span><div><b>Dano extraordinário não é automaticamente cobrado pelo valor de um bem novo.</b> O cálculo preserva o valor já consumido pelo uso, usando a depreciação correspondente ao tempo de utilização.</div></div>
       <div class="field"><label for="in-dano-valor2">Valor manual do dano (opcional — sobrescreve o cálculo automático)</label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
       `:''}
+      `}
     </div>`;
   }
 
@@ -900,7 +910,11 @@ function attachStepEvents(){
   const q=$('chip-qualidade'); if(q) q.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.qualidade=c.dataset.val; renderSteps(); }));
   const iEl=$('chip-intensidade'); if(iEl) iEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.intensidade=c.dataset.val; renderSteps(); }));
 
-  const cEl=$('chip-condicao'); if(cEl) cEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.condicao=c.dataset.val; renderSteps(); }));
+  const cEl=$('chip-condicao'); if(cEl) cEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    f.condicao=c.dataset.val;
+    f.analiseDesgaste = (c.dataset.val==='Ausente') ? 'ausente' : (f.analiseDesgaste==='ausente' ? 'sim' : f.analiseDesgaste);
+    renderSteps();
+  }));
   const dEl=$('chip-desgaste'); if(dEl) dEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.analiseDesgaste=c.dataset.val; renderSteps(); }));
   bind('in-dano-pct','danoPct'); bind('in-dano-valor','danoValor'); bind('in-dano-valor2','danoValor');
 }
