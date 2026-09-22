@@ -1,0 +1,1145 @@
+<title>Motor de Depreciação 360</title>
+<meta name="description" content="Calculadora técnica de depreciação e valor residual de bens para gestão patrimonial da 360Suites.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap">
+<style>
+:root{
+  /* 360Suites — Manual de marca: Vermelho 360 (Pantone 7636C / BC204B), Preto 360, Cinza 360 (75787B) */
+  --bg:#FAF7F8;
+  --surface:#FFFFFF;
+  --surface-2:#F3EEEF;
+  --ink:#161616;
+  --ink-soft:#75787B;
+  --line:#E4DEE0;
+  --primary:#BC204B;
+  --primary-ink:#8C1638;
+  --primary-soft:#F7E1E8;
+  --accent:#161616;
+  --accent-soft:#ECECEC;
+  --good:#2E7D4F;
+  --good-soft:#DFF0E4;
+  --warn:#B8862B;
+  --warn-soft:#F6E9CC;
+  --bad:#B3423A;
+  --bad-soft:#F7E0DD;
+  --shadow: 0 1px 2px rgba(20,10,13,.06), 0 6px 20px -6px rgba(20,10,13,.12);
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#141213;
+    --surface:#1D1A1B;
+    --surface-2:#262223;
+    --ink:#F2EDEE;
+    --ink-soft:#B7ABAF;
+    --line:#332D2F;
+    --primary:#E8497B;
+    --primary-ink:#F7B9CC;
+    --primary-soft:#3A1E27;
+    --accent:#F2EDEE;
+    --accent-soft:#2A2627;
+    --good:#6FCB92;
+    --good-soft:#1C3324;
+    --warn:#E3C066;
+    --warn-soft:#3A3018;
+    --bad:#E38B82;
+    --bad-soft:#3A211F;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px -6px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141213;
+  --surface:#1D1A1B;
+  --surface-2:#262223;
+  --ink:#F2EDEE;
+  --ink-soft:#B7ABAF;
+  --line:#332D2F;
+  --primary:#E8497B;
+  --primary-ink:#F7B9CC;
+  --primary-soft:#3A1E27;
+  --accent:#F2EDEE;
+  --accent-soft:#2A2627;
+  --good:#6FCB92;
+  --good-soft:#1C3324;
+  --warn:#E3C066;
+  --warn-soft:#3A3018;
+  --bad:#E38B82;
+  --bad-soft:#3A211F;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 6px 20px -6px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Rubik',system-ui,sans-serif;
+  padding-inline:16px;
+  padding-block:24px;
+}
+h1,h2,h3{font-family:'Rubik',system-ui,sans-serif; font-weight:700; text-wrap:balance; margin:0}
+.mono{font-family:'Rubik',system-ui,sans-serif; font-variant-numeric:tabular-nums; font-weight:500}
+.wrap{max-width:1180px; margin:0 auto}
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  flex-wrap:wrap; margin-bottom:22px;
+}
+.brandbar{
+  border-top:5px solid var(--primary); background:var(--surface); border:1px solid var(--line); border-top:5px solid var(--primary);
+  border-radius:var(--radius); margin-bottom:18px; padding:18px 20px; box-shadow:var(--shadow);
+}
+.brand{display:flex; align-items:center; gap:18px}
+.brand-mark{
+  height:72px; width:auto; object-fit:contain; flex:none;
+}
+.brand-divider{width:1px; height:52px; background:var(--line); flex:none}
+.brand .eyebrow-tool{font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--primary); margin:0 0 3px}
+.brand h1{font-size:19px; font-weight:600; color:var(--ink)}
+.brand p{margin:2px 0 0; font-size:13px; color:var(--ink-soft)}
+.tabs{display:flex; gap:6px; background:var(--surface-2); padding:4px; border-radius:10px}
+.tab-btn{
+  border:none; background:transparent; padding:8px 14px; border-radius:8px;
+  font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer;
+  font-family:inherit;
+}
+.tab-btn.active{background:var(--surface); color:var(--primary-ink); box-shadow:var(--shadow)}
+.tab-tag{
+  font-size:9px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+  background:var(--surface-2); color:var(--ink-soft); padding:2px 6px; border-radius:5px; margin-left:4px;
+}
+.tab-btn.active .tab-tag{background:var(--primary-soft); color:var(--primary-ink)}
+.view{display:none}
+.view.active{display:block}
+
+.layout{display:grid; grid-template-columns: 1fr 320px; gap:22px; align-items:start}
+@media (max-width: 980px){.layout{grid-template-columns:1fr}}
+
+.section-eyebrow{
+  display:flex; align-items:center; gap:8px; margin:26px 0 10px;
+}
+.section-eyebrow:first-child{margin-top:0}
+.section-eyebrow .num{
+  width:24px; height:24px; border-radius:50%; background:var(--primary); color:#fff;
+  font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none;
+  font-family:'JetBrains Mono',monospace;
+}
+.section-eyebrow .lbl{font-size:12.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft)}
+.autonote{
+  display:flex; align-items:center; gap:8px; font-size:12px; color:var(--primary-ink);
+  background:var(--primary-soft); border-radius:999px; padding:6px 14px; width:fit-content; font-weight:600;
+  margin-bottom:18px;
+}
+.autonote .dot{width:7px; height:7px; border-radius:50%; background:var(--primary); animation:pulse 1.8s infinite}
+@media (prefers-reduced-motion: reduce){.autonote .dot{animation:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.card{
+  background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  padding:22px; box-shadow:var(--shadow); margin-bottom:16px;
+}
+.card h2{font-size:17px; margin-bottom:2px}
+.card .hint{font-size:12.5px; color:var(--ink-soft); margin:0 0 16px}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+.grid3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px}
+@media (max-width:640px){.grid2,.grid3{grid-template-columns:1fr}}
+.field{display:flex; flex-direction:column; gap:6px}
+.field label{font-size:12.5px; font-weight:600; color:var(--ink-soft)}
+.field .tip{font-size:11px; color:var(--ink-soft); font-weight:400; margin-top:-2px}
+input,select,textarea{
+  font-family:inherit; font-size:14px; padding:9px 11px; border-radius:8px;
+  border:1px solid var(--line); background:var(--bg); color:var(--ink); width:100%;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--primary); outline-offset:1px}
+.chiprow{display:flex; gap:8px; flex-wrap:wrap}
+.chip{
+  border:1px solid var(--line); background:var(--surface); padding:8px 13px; border-radius:999px;
+  font-size:12.5px; font-weight:600; cursor:pointer; color:var(--ink-soft);
+}
+.chip.sel{background:var(--primary); color:#fff; border-color:var(--primary)}
+.rowline{display:flex; align-items:center; gap:8px; font-size:13px}
+.check{display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; cursor:pointer}
+.btn{
+  border:none; border-radius:9px; padding:10px 16px; font-weight:700; font-size:13.5px;
+  cursor:pointer; font-family:inherit;
+}
+.btn-primary{background:var(--primary); color:#fff}
+.btn-ghost{background:var(--surface-2); color:var(--ink)}
+.btn-outline{background:transparent; border:1px solid var(--line); color:var(--ink)}
+.navrow{display:flex; justify-content:space-between; margin-top:6px}
+.badge{
+  display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+  padding:3px 9px; border-radius:999px; letter-spacing:.02em; text-transform:uppercase;
+}
+.badge-good{background:var(--good-soft); color:var(--good)}
+.badge-warn{background:var(--warn-soft); color:var(--warn)}
+.badge-bad{background:var(--bad-soft); color:var(--bad)}
+.badge-neu{background:var(--surface-2); color:var(--ink-soft)}
+
+.result-panel{position:sticky; top:0; display:flex; flex-direction:column; gap:12px}
+.result-card{
+  background:linear-gradient(165deg,var(--primary-ink),var(--primary));
+  color:#fff; border-radius:var(--radius); padding:22px; box-shadow:var(--shadow);
+}
+.result-card .eyebrow{font-size:11px; letter-spacing:.06em; text-transform:uppercase; opacity:.8; font-weight:700}
+.result-card .value{font-family:'Rubik',sans-serif; font-size:34px; font-weight:700; margin:6px 0 2px; line-height:1}
+.result-card .sub{font-size:12.5px; opacity:.85}
+.breakdown{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
+.breakdown h3{font-size:13px; margin-bottom:10px}
+.bd-row{display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0; border-bottom:1px solid var(--line)}
+.bd-row:last-child{border-bottom:none}
+.bd-row .k{color:var(--ink-soft)}
+.bd-row .v{font-family:'JetBrains Mono',monospace; font-weight:600}
+.meter{height:8px; background:var(--surface-2); border-radius:99px; overflow:hidden; margin-top:8px}
+.meter > div{height:100%; background:var(--primary); border-radius:99px}
+
+details.memoria{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px; margin-top:16px}
+details.memoria summary{cursor:pointer; font-weight:700; font-size:14px; font-family:'Rubik',sans-serif}
+.memoria ol{margin:14px 0 0; padding-left:20px; font-size:13px; line-height:1.7}
+.memoria ol li{margin-bottom:6px}
+.memoria .formula{
+  background:var(--surface-2); border-radius:8px; padding:12px 14px; font-family:'JetBrains Mono',monospace;
+  font-size:12.5px; margin:10px 0; overflow-x:auto; white-space:pre;
+}
+
+.notice{border-radius:10px; padding:12px 14px; font-size:12.5px; display:flex; gap:10px; align-items:flex-start; margin-bottom:14px}
+.notice-info{background:var(--primary-soft); color:var(--primary-ink)}
+.notice-warn{background:var(--warn-soft); color:var(--ink)}
+.notice b{display:block; font-size:12.5px; margin-bottom:2px}
+
+table{width:100%; border-collapse:collapse; font-size:12.5px}
+th,td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap}
+th{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); font-weight:700}
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px}
+
+.kpi-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px}
+@media (max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; box-shadow:var(--shadow)}
+.kpi .k-label{font-size:11.5px; color:var(--ink-soft); font-weight:600; text-transform:uppercase; letter-spacing:.02em}
+.kpi .k-val{font-family:'Rubik',sans-serif; font-size:24px; font-weight:700; margin-top:4px}
+.chart-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow)}
+.chart-card h3{font-size:13.5px; margin-bottom:12px}
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; margin-top:10px; color:var(--ink-soft)}
+.legend .sw{width:10px; height:10px; border-radius:3px; display:inline-block; margin-right:5px; vertical-align:-1px}
+.footer-note{font-size:11.5px; color:var(--ink-soft); text-align:center; margin-top:30px; line-height:1.6}
+.print-only{display:none}
+@media print{
+  .noprint{display:none !important}
+  .print-only{display:block}
+}
+.small-btn{font-size:11.5px; padding:6px 10px; border-radius:7px}
+.hist-actions{display:flex; gap:8px}
+.empty{color:var(--ink-soft); font-size:13px; text-align:center; padding:30px 10px}
+select[multiple]{height:110px}
+</style>
+
+<div class="wrap">
+  <div class="brandbar">
+    <div class="brand">
+      <img class="brand-mark" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEqCAYAAACvJG1oAACEVElEQVR42u2dd5wdVfnGv+ecmVt275b03iG0EBISCCH0plIUCyCiYi8g+pOiWECqqAgiICAWEJGigvTeS+iQkEp679kk226ZmXN+f0zZezfbAkl2l8zD50LY7G0z5zznrc8rbr31VrPXXnthjEFKSVswxiCE4KNCCIExhs7CR/0e2+s6dJfX64royHf8OF3XnfXeHX2fnfV5tNZIKXn77be59dZbscaPH8/EiROJESNGjK6KfD6P67pYuVwOrXXEZDFixIjRVeB5HkopcrkcAJYQIiKqmLBixIjR1Vx/KWXkfsYMFSNGjG6DmLBixIjR5RFbWDFixIgtrBgxYsTYETDGxIQVI0aM7kFWQoiYsGLEiBG7hDFixIgRE1aMGDFiwooRI0aMrk9YndmEHCNGjBgdQVSH9XHv6o8RI0bsEsaIESPGTkPoCcaEFSNGjO7jEsaXIkaMGLGFFSNGjBjbGTFhxYgRo9tYWTFhxYgRo8tDCOH3EsZ1WDFixOgupBVbWDFixOg2iAtHY8SI0S0Qx7BixIgRu4QxYsSIEVtYMWLE2GXJCuI6rBgxYnQTdzAmrBgxYnQrxIQVI0aM2CWMESNGjO3uEsaV7jFixOguVlZcOBojRoxug9gljBEjRrdxC2OXMEaMGN3CHYS4lzBGjBjdxLqKXcIYMWJ0K8SEFSNGjJiwYsSIEWN7IS4cjREjRmxhxYgRI8b2Rhx0jxEjRmxhxYgRI8b2RhzDihEjRuwSxogRI0bsEsaIESMmrPgSxIgRo6sjjmHFiBGj+1lYsVpDjBgxYpcwRowYMbYToixhLC8TI0aM2MKKESNGjJiwYsSIERNWjBgxYnRRxGUNMWLEiC2sGDFixIgJK0aMGDFhxZcgRowYXR1CCH/yc3wpYsSI0V1IKyasGDFidHnEWcIYMWJ0K+sqJqwYMWLEFlaMGDFi7AjSigkrRowY3cYtjAkrRowY3YKsYpcwRowY3QoxYcWIEaPbwOqWn7q5qnMrGoTGmKhCtsi2jF7ElDy96d/h74fPbVXk0LT/GbrNZdQm+PKl36UlAW3/GoHQgAItDArh/43pvtejpbUT/jlaN8a0ek2auy+tvd72WNsxYXUrh7ZjCw5j8DyviKR8whJCBJtOIxCYYAc217cXRQTX4mLr5otJY5DGv1ZGSlQL30m0GlPw7XNjDB4gEQgDWoA03ZOgouuidXRYGWOCNeITjgzWTluvY4rWUvHh1xahlZ4GMTG1SlgfpyEUxhiM1v4ikxIpJUq27vUqodrfmQaf9PBfUwSE93FAuDekEGTXbsRdXwuWKLI/27goEjwDZf17Y1dVIEyTgaBF94k1RASjNUJIBKCUavX389kcuVwOrTX5fB5tDMlEAsuySCQSpNJphGx9jWit0VpHxCXC9VlMbLFV1ep9srrj5jNbuSf+l5FSIooW2+aaTcxfsIClS5awevVqNm7cSH1dHfX19XiuG1lPUghSqRTlmQxV1dX069ePIUOGMHLUKIYOGYKyrZIFF5r3Qohu7QEJDQiDrm3knZ9fT+17c1EpG+n5lqcOvpRodqZJISg4ecRewznsN+eTrKgAbdCWQBDWyoguv/gBf80IAQFxaNdj9YqVLF26lOXLl7Nq9WpqNm5k86ZN0dppbGzE8zwas1mM1qTKyrAsi2QySSaToaKigsrKSvr07kPffn0ZNHgQw4YNZ8iQwSSSyZLP4hl/PSmKyCtGK1a96J4WlqHIhTMGpRRCCPL5PHNnz+HVV19l5syZLFq0iBUrllNbW0culwusKtFqjMEYg2cMlmVRlk7Tt29fRo4cyajdRnHAAQcyafJB9O3bN3qO63kIKZCiey40jYcSFssee5naF96hzIARBkwT3YhmhGUClyhnHPY8ajKpwf3Ia01SyeB3TbNYYddz9SKSAhobG1m0aBHTp01j1sxZLF++nGXLlrF2zRrqGxooFAqIgKSbPzf8rw7eJzzMSiwCZVFWXkavXr0YMmQIQ4cOZfTo0YwbN4499tiDHr16Rhe7+WFYHEOLh8V04xiW0RqjNZblf/zFixbz/LPP8dQzTzNr5kw2rluHNgY7MNWTtk06ONnaJOgwtgVoz2P1qlUsXbKEZ595hn/e8U+GDh/GwZMP5lOf+hQHHHgA6bIyjDG4rotSCtmNFpgxBi0V7vI1LPvHI6QMyKSFcjXgW45GlhKWFgYhFdl8jj4HjWP4Z4/BoLGD3xcGTOBWdZnvGJCAZVmRq7d+7TpmzpzJK6+8wrvvvsvCRYvYuH49ruOglMK2bf/QSqUoS6dLEjEtkqEQW9mUEZkFcdTVq1ezbNkyXnrxRZRSVFVXM2zYMMaOHcvkgyez//77M2z4cGRgZbmuixAiOoxjBITV3S6G1tqPS0nJvA/m8d///IeHHnyQFcuXo7X2zfKKiq0tJ8/bZvPTtm0SiUT0vosXLGT+nA/477//zcQDD+T0L53O0cccQ3l5ub8xwrhEN7mmtgcf3PsUDXMWUZZOYLRGY9DhBjRNgSkjfEtCaw9dlmTE1z6L6lGJp10kClOUINR0fgwrJKqQpGpra3n/vWk89+yzvPDCCyxdupSGhgaUZWEHFjXpdIlVE8aaOsCMW4UqSmKlSqGkJGnb0es7+TyzZ87k/WnT+Pe999K/f38OmjyZ4447jokTJ9JvQP+Sz9FWXG1XcQe7jYXVPOawbu06brvt7/z73n+zetUqErZNOp1GAp4xaKP9TfYRLJ3mWR6AdDIFST/u8PKLL/Lqq68yefJkvvf973PkUUf6MQnPK3Ebukq8TxQF27TnIZWifvo8Fv33SRLJBFKD0AaDRCLwZLARg8xfcPFpzGcZ8skj6XPEAWhPB3EXE/wjUabzvMFikgk3+LJly3jyySd5/NFHmTVjJnV1dViWhW3bVFZWbrW+dkSIxBQRX/Hrp1IphBBorVm7Zg3/vvdeHnzwQUaNHMlxn/gExx9/PPvuNxalVPTdpJKA2GXj8lZXJqjQPC4+YR5++GFu/OP1vD99um9NlZc3WVHNdun2Jg3PNGV3ysrK0Frz6ssv8+7bb3Pal07nrB/8gIEDBuC6bvTZRVtlETslTtXMrQtrivIu8/71AM76DZTbaaRn8KRAY1DGII1AGIk0GlcYkAKR97D79GbY1z8DSYXw/MwaxRaV2PlrpXjNhOtk7py53HfffTz+yCMsWrwYJSWJRIJMJrPtFtQOshiKiTK05rXWzJ83jzmzZ3PnP//JcZ84jpNP/iyHHHoISik87WGMf3DLXchVDK9TlySsyP8PUsCWZbF50yauufZa7rzzTpxsjsqKCnQnLbrihRYS11//8lfeeONNfv7zn3PkUUeWBGBlJ2Z/VMjfQXDOGJ/81z33JsufmUqVlcRyA4tU+dZUSHAGgyf9CLwwgpznMPizR1G1755+GUAnZ7VasqjmzJnD3XfdzWOPPsry5ctJJRJkysu7BEl1ZE0JIUgmk6RSKeobGrjzzn/x6COPcuSRR/Glr5zBoYce6se4PC8qs9mVXMIum94ygXtlWRZz58zlO9/6Nn/9861I45OEV5RR6exYiRCCyooKZs+cydnf/z5/u/UvkYVoWihI3dkXUhgC186AlOhN9Sz658OUbcqRNMIv9AxiVGEsSmAw0vg1VUKg8y72XsPZ7UsnYpTo9HqhMC4ppUQpxaqVq/jtb3/Ll884g1tuvpl169dTWVERWS3FB0h3sCa01lhCUl1RgVMo8L/77+Pb3/gm5//4XGbOmIEVBOM91+XjVEvZrkvY1b5sSEJaa2zb5vWpr3HB+eezaOFCKjMZjC49JXfU59+qpaeNz2qMwbgeFeXl5LJZLrnkEtasXcu5559HOp3G07rkZNipJBv10QgMGikUKx98ni1vziSTTPnxPgGe9MlKGFBBeYMApAYpJA0W7Hn6CSSG9sMLEx+duaE93/LOZbM8+MCD3HzzzcyZM4dUKuXHpoJi0O21BjqyHj7KWmppPfukbJBCUlVZhVMocPddd/HMM89w5pln8pWvfpXeffsExdIgpPjYlkBE3oroQvUy4Snoui6WUjz/7HOcfdZZLFmyhEwms0NOyda+f0fep6TdAnBdD0spUskkf7rxRi7+5UU01Df4FkqzGp2dZaX6lecCrV0kgsKK1Sz+1yMkXBdHGRwBjgI3+CrShO6gb2opFPX5POUHjWHoiYfjaUNnmlba891XZSlmTJvO2d8/i5+cfz6LFiygqqIC27J8otoO17i4Jiq838V/lkWdD83X0XbZV2F7pjF42kMIQXl5OVs2b+b3V1/NmV/9Kk89+ZRfoS8FbmBtdbpVvwM5okvFsIQQkRs49eVX+PH//R81NTWkU6mmsgTx4V63+QJqfhK19PfbctNNWPwXvG55WRl33XknArji17/GKqqW31mHRElbmvHjUMv+9QQNC5ZRlkqgtYk+twzISpomt1AG16GhOs2+Xz4e2asC1/UzjJ3lfkslcfIFbr/9dm684QY2rF9HWbrct8o931oUH3LtFd/vYiIqJoHw4Cl+hL8XxtFEUZFpc4vpQ9/I4HXDmK5t28yYPp3vf/e7nHraaZx33nn07tsHz/NKkg8fpxiWEKILEZYBbfybMWP6dH56wQVsqqkhlUx+qEBpMUm5rovjOHieF2Uci7N4WuuSG23bNrZt+79jjJ9Z21bzVQjS6TR3/+tfVFdV8bNf/qLkdXYaaRlAa4xlUffuXJb/5xnSSuGFBZ86cAUpLhD1H5ZRNORyDD75aAYeNQm0RiHxmg7/nWp9K6VYsmgxV155JY8//ji2UpSXZ4JCYvORP1C4JjzPw3EcXNeNDlBlWSQTCVKpFJZto4LYWUhoruviui6FQoFcLofruiUJgUQiUUIiH8YKKg5BaK1JptNoz+P2225j+vTpXHTRRUyecnAUs5Mfw1YfqxP5qcRg0tpDKou1a9byi5//gsWLF1OeyXS44DM66RAIAY7rRs2p1T16MGq33Rg0ZDADBgykf/9+VFdVk6nI4DgOW7ZsYf369axZvYbVq1ezYsUK1q1dSy6bxbJtUnbCjw8UBdk7dCgKQTKV4tZbb2XQkCGc+fWvRSUP252wTCvmlfHdPZXPs+yfj6DXbsQqTyCCWjVpwJUCR0BCg/IC00r4RO8O6smeXzoJEjbG1WglEMLsuEogUyT8ExwmYUPy0089zZWXXca8efMoz2T8wyQ8zEQbhN3MCi45NAICKLguuWwWgIqKCgYNHszAQYMYPGgQo0aNYvjIEfTs1YuK8gypVAo7kcAOrGbtafKFAvl8jsaGRrbU1rJ06VIWLFjAyuXLWbliBWvWrGHLli1RbDaRSKCkwhgdlLttW4xLCIEJSKkik+H9adP47ne+ww9/+EO++a1vIZREe2Hd1sfDHewyLmFINp7rcvXvfsebb75JVWXlNlWnhxaV53lks1l69uzJlEMOYcohh3DQ5MkMGzaUyuoqLNX2V25sbGT9+vXMeH8GL734Im+/9RYL5s/HGOMXpzYz8zvyvQCuvvpqxowZw4QDJvquy47w/1pwU7XrYdmKdS+8zeKnX6UyYfuV6Np/UlNWsOg5AiSSBu0y7AvHUjluD3A8jJIIAZIdF8fyr62vjOF6nl80qTV/+fOtXHvNNdTX1VGRyaA7aKEY0cpakdK3hgoFbMtiwIABjB49mv3224+DDjqIESNG0rt3L1Jl6Y/0fVzXZfPGGpYvX85bb7/NtGnTmDtnLkuWLKa+ro6E7as8SCk/lCcRbuSysjJqt2zhsksvZcnixVxw4U+pqq6ODsiPi7XVqYQlii66VIoHH7if++67L2p12dbAeTabpbKyks+fcgqnnHoq48ePww5aa8L4kud5rWZ/woLQYcOGMWzYME486UTWr1nLY48/zj333MOM99/HDuIH7X2+4gB7IpmkpqaGq666ir/9/W9UVlZtv2xOC9wRtcgYjVECs6GW+f94GKshD8kEQnt+YF2CJ0BpsIPYlScBKXDyLmr3Iex2yicxMkw0ipKK+R2yJqTABJI+llI0NjZy1ZW/5h+3346SkrKysqjP7sPGqXK5HK7nMWDAACYecACHHXYYU6ZMYciQIVgJu9Ta83RQbNsxV755HEwpRe9+fendry/jJ04AYN3adbz77rs8/8LzvPbqVBYvWoTreZSlUlFVO9q0Sritxfds2//sf//731mydClX/eY3DBk2FNdxS1zebh3HeuWVV8yUKVM6zecNN+76tev44mmnMX/ePFKpVIcJSwQnUy6X4+hjjuGcH57DAQceGN1EY/ymESFkJNzXXEm0pDyh6NQq1kbatGkTd//rLm79859Zv349maAWrOPxEUVdQz2XXnop3/nedzHaIOT2JSyz1SL2UFKx/G8PMeeKv5BK+C4IgNIGLSSuFFhaY2nwVBiAF2zRHntf9F2Gn3kSjnYR0sLSRYWlO5C0XNfFsiw2bNjAL3/+Cx564AHKysp8Ib1tVbcLRPe0MWRzOYQQjBkzhpNOOoljjjmGPfbcs+n66aCtqzjo3uy6doQoW2uUDtdZ8T5bs2YNL730Eo889DBTX32VbGOjHyeTQTvOh1Dzk0JQ39jI2P3249prr2XvMfvgOS7KUl1GRaOj8AIr+4knnuBHP/pR5xaOmqJambvvvjuqo+mo9SKEoFAoYNk2F118MX/+y60ccOCBUVFheMIpZZWkoJsvvOjPRdkdKwjMhwH5Hj16cNYPzub2f/yDAydNYkt9/TY2OmsSlsUd//gHy5cuQ0ixQ8o0AsrFeH6tVGHZKub/51HKXS/aesKAJwXS+MoKoWXlAdJI8jmHikn7MOSkI/zKeKGa1EjF9o24N8/AhWS1etVqfnTOD3nwf/+jvLycIL+/7RYV0JDNki8UOHjywdx4443cdfddnH3OD9hjrz39av4g4YIIGpWDex/GuForXWgvPFH8CAtcw5CCDhRH+vfvz6mnnspf/vZX7rjzn5xyyikkEgnqGurxjN6qxatDK80YP641fTrf+c53ePftd1C2hed63bbkodMHqUb9gkqxeuUq/vOf/3Q4FRsugHw+T7/+/bnxTzfyvbO+T6qo/KFYlqOje6z57xUvNBNspnH7j+cvf/0rX/jCF3wBtw7efK0NyWSShQsXcs899+zAJIbvtgkALfjgnw+R/WApIm37agzCoIo6omVgSWrplzh4QLY6zZ5f+QyqZwUEfy9MUzZxe5v54TUMU/bLly7jnLPP5rlnnqGyojKKa3XUPQrvWy7I2E2aNIkb/3Qjt/3jdk7+3Gfp2asX2vPQ2s/mhmtlp2VuwxouKfE8D8/zSCQSHDxlCn/44x/5xz//ycmf/zwycIk/rGWSKS9n6eLFnPX97/Pyiy+hbCuq1equ6FQLK7SkHn30URYuXFhSb9XSKdWUBRTkcjn6DxjAH6+/nmOPOw7HcXasWxssMsdx6N2nN1f//vd8+ctfJhe4Ge0+3QDaYCnFk088wcYNGwOX8CMuHtHC+3gGoSSb353LqodfpFwqnECVT/oCDCjtW2MCg6V9bXcpJA35PH2PmUyfIw7A1RodEGBIZjvCEyyuv1u9ejXn/vjHvPbqVCoyfsmCCPS2dAeusQwIsK6ujhEjRnDZZZdx+z/+wWdOPplMRSYqbZFKIaVo0ZXemSi2ulzXRWM48KBJ3HDjDfzpppuYPHky+Xwex3G2eW17nkdZWRnLly/nvPPO48033ozir93V0upUwlJK0VDfwKOPPurXvngurtY4novjtvxwtUfeKZCpqOCKK69k8sGT8Vx/scuWNNdNs0d7Zkorvxu5ipZ/SqXL0lx6+eWccNJJNDQ2truYAhuBdDrNgvnzeebpp30ZYr0dKrJLHM8g7tHoMPfOB2H1RizL8n8q/LabKGYjmtL+0vgZRTGgJ3t+6URI2UgERoqS3+vQdfwQ1rZlWWzaWMMF557Hqy+/QkVFxi9sNaF0TctEKYougLQU2XweA3z1zDO54447+Oa3v0VlVWWJPtZOj9WaNh7NAvQheQspOe6Tn+C2f/yDC392IdXV1dE6a3F9t/CeAv+1MmXlrFq5knP/7/+Y8f77WJa1zfpwXSHgDp2dJRR+EPXsc37At77z7a1vRCsWhac9+vTuw6RJk/yCQkt12ALZFmultc9sWRZaa1LpFL+69BIWLV7E3NlzSCeTUbp9K6tLNA18yOdzvPjCC5z6xdO2gxtiiPSRDLhGY1uK9U++xuanXqcsmfKn4yBLta2CqLk0Bk+CEpJcLs+Qzx9NxYQ9ohofWXRdrO1sXpmihEeusZGLL7qI5597jorKClzPK5kaJtsgKxnEquoa6hmx22785IIL+MxnPuNbGa4XDYVo6VrvFCdQdGwzNv+z53mUV1Zw9g9/yKTJB/P7313Nyy+/RCqZRCnl65G1tl2K3tPTHuXpNIsXLeL8H5/LrX/5K8NGDo+UcrtD72GXkJcxxpDJZDjmmGM+tEvZWRdbSonrugwcOJBzzzuPc87+AZ7rtiv54aefE8yZM4e1a9bQf8CAj+TKakRQUwUO/vXQ6zcx484HIZdD2sko87X1mvatLi0FbsGhbI/h7Hbap3zddr2TFmHQSXD1767m/vvu85U4OlosDEgl8TyXQsHh+ONP4JcXX8Tw4cOj1wgLJ7tjQ7CUEh1MbJp4wET+dtvfufGGG/jzLbeQz+dJbkMXiKc15eXlzJgxg5/85AJu+vMt9OrVyyc91X2ujexsxgwzemE7QUceYaCyKywoz/M49thjOfKII2hszGJ1IHFg2zYrlq9g1qzZ2+/wNmDwJUlWPPg8uTdnkkzYbZCVXzzqyUDrSgpGfPkEUsMGbD3LcccFMZFScsc/7uAvf/kL6XS6JLbSHskopSg4DgjJj887jxv+dGMpWXXzsWxNGUaF4zqUlZfx059dyLV/+AN9+/Uj29i4TT2DnueRyWR46cUXueLyK3AKji8r1EU1wlqyQmVn34xwYW3rY2dndlojLADLsjjllFNIl6V9YbU2PlMYR6lvqOeDeR+UkPeHuo6hlpUw2NIiu3g5i+56lEpPNGmyt+aOBROb3bxL5QFjGHjS4X7mVkj0Dl4ZXiDT/OILL3L1737X4jSa1q6LAD+DFhQK/+a3v2uS8gk0suTHRNwuXOO2ZWO0f7if/LnPcvMtt7DXPvtQV1cXNaObYm15sfW6C/tmM5kM995zD7f++c9+wF+bba9v6yQjR3Y2Y34Y0uls2eGWSGviAQew26hR/lioDn6uFctXlLzGh4sDhf9ohKtZeNfjFBauQiUT7U5gdqQAz1AoT7DHt7+A1aMSsb0KWtt0T/xiwBXLlnP5pZdSu3kzCdvucPW/kJKGxkYGDhrE9TfewCmnnRJlibvCQbYj9kno3oahiIkHHsAtt97K5ClTqKuv90MRxYdYs2SOaDb9PGHb/PGPf+SZp55GWX48rKtnDoUQxJMbt8NF1MbQs1dP9h07Fsdx2hVsC5fOmjVrPnKLjhHgGr+ifcvbs1n5v+dJ2BaO0bQ3cEtIQb1ToPexk+k9ZRzG0yBkJC2zQ7xA48fZHMfhN7+5itmzZpVMHWpvwyilyGazjBo1iptuuokjjjzS75dTapcYRBpmEz3XZeSokfzp5ps47LDDqG9oQEgZWUptWvlak7BtGhsa+PVVv2bVylV+EL8Li/91euHoxwlGaxCCfffd17/x7SQDTGBVbd68mWygEPChT7awfSPrMP8fD+Kur0Fayi8eNW2ufExBYw3ow+ivfAaTtH2hPxkGxMwOWXRG+y7nXXfdxUMPPRzJXbea7WpGVo3ZLCNGjuSmm25iwgETS2ZC7iojGYQQqKC8pn///txwww0cduihNDY2IqVq9zr64UNNeVkZc2bN5jdXXYXneqXqF10UMWFtR/QbMCBqXhUdWHRhQWDbLp9fsKkJ/qWbfuZbLIaktFn35KtsePFtUukUaI2t/cZmL7jDKuwDNP6fFVDwPPqffASV+++B9jSuFL6Sg9n+alfFmlZz58zlhuv+2LT4TFOdlWiD4LPZLP0HDuTa6/7AmLH7lqbld8Fho0opPM+jb/9+XH/jjUyaPJnGhoYOS8poz6O8rIwHH3yQ+++/P1q7XdktjAlrOyKZTPpFmh3QggfIF9onrJJ2oaIdrXy2QgqJt2EL8/71CCKbRwmB0lBQwUbXTa4jgXSMUJJ8vkBiz6Hs8aWTMEIjAy13GUbGtnNdQ+j65vN5rr/uOn+eZJGSRnvkXsjn6dGzJ1f//momHnDAVjVEu+KcvtA91J5Hv/79uOaaaxiz7740NDR0KC5qaBIPuOGG61m+fHmTWkRMWB/nlVNkRQTTcjrioFhBo227N8k09fJ5Rb6TwSCFYNn/nqX2vQ8oTySQng4UQyUG4Q82DQpGQ5UUF0MuoRh++vHYQ/tiPJ9MrKB1RwvD9nYMwilCjz36GI8+8ghlZWUd1s03WqMsi4suvpgjjjjiQ7WpfKyXn5S4jsOIUSP5zW9/y4CBA8nn8x26RuG09HkfzOPWP/+5y7qEXX7MV/cKYvn/qa2tiyymNoPuQVDethNYltWBF9eR2xTyo4c/FzC3aAWL736UtAapDcKAK8EKdIxNkfSM7YEyinzOoeqAfRj2maNw8PxhqKI4irR9T1jt6WBi91puvummSEW0oyd5Np/n+2efzRdOPaVkSG2MYkvLwnVcxk/Yn4t/9SusRAK3A4XVfpO8JpVK8+97/80br73+ocUEYwurm1lYixYtjGRtOmJxlGfKSSaTbW92/HqpcLiCimI+BlyPBXc+THbJSixL4uHPEVSmaBiqaaIfC4E2Grc8xeivfgZZnfElZoTfL6gji060m2H8MO7gv+/9NzPff590Ot0hnXwhJfWNjRx//PGcffbZUQ1bifxLjOBaCb/q3/X49Mmf4Tvf+Q65XM5fP81/t4VLn7AttmzZwq233koum4vuW1dxD+Ms4fZkfeGb5NOnT98m+eSePXtGgz7bbOehKE7jhUM2FZvemsWyB56lXFnoogC779bpYAKOiFQaHFuRdVz6HTeZPodP9AmAJkW+UIfel/AT222hKcsfHnH33XdHqpgdIatcPs/IkSO56KKLSJeXdWorVnextBB+IuYH55zD4YcfTmO2sWSGZGuZY+26ZMrKeOG553j2mWe6nJUVu4Tby90JNtHSpcuYOWsWqWQyUi5tbyMPGjSoQyawMgKDCDKDQTVzQ5Z5/3gQUVOHLRTS+HpRMvDoPBlqswssJFgSxylg+lQy+isnYVIJ0E0aWJim8fQmLGswH728ISTwf915J4sXLuxw/5vRGtuyuOAnP2HYiOFRBXuMtjd1GPMrz5Tzs5/9jH59+1FwHL/so50yFyklhYLDbbfdFgXuYwvrY4qnn3qKNatWRRaEaIfkLMti5MiR7ca7il/J4AfdpVKseOY1Nrz4Nhk7hTYgtUBoEVUDKwNKgPBcnMYsdbksmxOCYWccT2a/0XiuG30WwsGjwWAKwmkyxeUCpkkhNnqYIp+zKPRlgn+FsavFCxfz0KOPkEgkAwWu9q2rbDbL5z73OT796U/HZLVN1r6IelzHjtuP733/e77OVpEufWuL0xhDWTrF22+9xVNPPvmRpl3vKFjxLf7wCDfS+g3rue++/6KCuEpLcaxIsVMIHNelR69e7LPX3iXmbqunS1A/JYzBFQKzdhNL//EIycY8pFP+bEFjfM11GZQ05B1cYzD9qqkeO5ohE/elYq+R9Nh/T7QlsIJbX5KjzHuYrOfbWK6HMSAtCylA2BYiKbeqdzJGYzyNQEbKD74uYVP844H772PRksX0SlfiebrNkqmwhGHEyJGcdfbZflxGe7Er2HEzy/fwAwnuM874Ms8+9TSvvvpqND1dGz+73BJhSSlxsln+fc+9HP+p40mkklEFfGffgS43+bk7oXiowG1/+ztzZs2O1AZaI51wQzqFArvtthu7jx7dfmuOidSuENqQVJJFDzxD43tzSScTaDyEAG1JjOtRyLkUKtIkxwxn5JRJ9D/0QMr3Hoosbwrum7p6sus3462toW7dBmpXrSW3bhPOlnryW+oxrsbN5vz3KyvD2BK7soxkjyrK+/emcmA/0gP6oPr1JNW3GhHUUxkMeC4IiQvYSrJu/Xoee+wx0tIKlCNMu26N63mc+bWvMXK3UX6xqVTxgvsQ7qGnPSoqK/je97/P+++/3zQTs511nUqleOedd5g6dSpHHn2Ur/rayQdG15v83F2ICt918rSvcvrCc89z+223YwXNu+1aTELgas3+48eTLkvjuS6qrdKGwOtypCahJLn5y5h376OkBGipEUL6f9+YQ1dlqD7qQIadcBi9Jo/D6lsdvUx28RqysxezafZ81s/5gJrFy0lsakA35PEKBZQ2qCA7KIOsoScELsb3Fo2fgTRKoJIJdFka2beaHrsPpe+EMVTuNZLK3Ydh9awEwNEOCJsnn3maD2bPJZ1Mklf+6W6bljdNWM2+/4QJnHLKKf5kIWLL6kNucV91w9McdczRHH/CCdx9991UVlS0reIRZGLramv53//+xxFHHdllrFshBFZ3FqTvLKvKcz3shM2c2XP4+S9+QV1tLalUKpoA1NrFBn+EVa9evfnkJz8ZxWvacwddfMLAdZl/58N4i1Zjp9Joo2nMOYhMGb2OOYiRp36C6gPGIMp8a8rd3MDGt99n9UvvsOG193FWrodsFksbyqUCSyGERKbSPjEEcQ5DFMbyddJDQiEck26gthFvUz01c5aw4bGp6MoyyncfyqCDx9PvkAlUjtkNTzo88vDDYAy2kLjGDYdKtx5YFYKvfe1rVPfsEY14ivFh6Mq/idpopFSc8eUv89TTT9PY0IDVTjW7MYZUMsWrr77K/PnzGT16dKeNAdwqhhXHBraNsLSnsRM206dN57xzz2XZkiWUpdPtjybTGhE070455FD2Gz+uY0oNwpc9TkpF/dRprH3oRSrtJLm8Qz5p0eu4g9ntlE/Sa8p+UOa7Zo3zVrLu6bdY8cpr1MycSao2T1ra/mj1ZBLLCIQHTjDayx/vFbieOtCbMpSQS1Odlh+j0pZfqZ/UNhiDtyVL7s3ZzHtrFgvvfIQhkyeydlgls995D5lMkJXGTxi0cpmUUjQ0NLD/xAkcc9yx3UJUrju4hWEz/oSJE/nUpz7FXXfeSaKiom0BTG2wEzarVq3imaefYXQQuogyxp3EGXEMaxsuVDjVRUrJM089zUUXXcTyZcs6RFbhTTZak0gkOOXUL5BIJDqU/RIakgZEfSMz734Ib9MWskKS3GMUe3ztZAaecAiyIgXAllkLWfHwi6x9+jXchStJeYY+CQtll1Hwy6uwPIMwhoLyC0TDic9Rkq/Iwgpd0pJT278gSM8vm3CERuDXWqWQWBLM5jpWPfYCD4p1NObqUZaNwZDwRDATsYU9ov3K/a997etUVVXFmcHtFsIIm8cFp512Go8/+ijZXA7VXslCcGA9/9xznPm1M/1WqmAsWmfwVZfQdO8WFlWgMGBZfiXwbX+/jVtuvpmGhnrKA/3x9oZ1CQRCSerq6jjm2GM59tjjWpw83dJiA41UkjXPv83qp9+grCLNwM8ew+5nfpbkKL+Oq3H+CpY++DzLH3oWd+lq0lKSSltooOApLO3HnzxAYlAEswmLKhKEKbWmwERDVosXfvhdVfAXngApg7YgrUkYcG1FXgo2bK7DKEhoXyxQ+36lv4GKiFIGY9v22ntvDj/iiI+sERaj2foLikDH7T+egw4+mMcffZRMJtOOW6hJpVJMnz6dWTNncuCkSZHwYmdZi7suYRlTWg8pKCn29NO7ftBSKUUhX+Dll1/iTzfcyBuvv04qlSKVSEZmtWnrlAomuniOQ3V1FWeddRbpsnTbMYGggNMNPgfranj/z/8h1b8f+57/NQYefzBYFnpLPSsffJHZ//wvhYWrqTIKlU775Qyh1Sd0QDAgvbAR2mcKHUiSSt3UyqODzxsSkymKY/mlFU2DWh3L/0Wp/aJWbUkSjiHpSBbYeZbqLNpW4AmEEXjSEAjYYHm+peUGlRKOcTn+0yfQq3cvPK2j6uzi/slWZ33FaDOWJQBXa2zb5rOf/xxPP/NM22QVXGMpJXVbtvDe2+9w4KRJ/gEjOucWhPFja9fjqmCScTSevpTBi7F61WqmvvoqDz30EC+99BJeoRCpDHRMacCfEyiEIJvL8e3vfIeDDp4cFVQ2M6WKSh98V1Bpvy5m+r8fx+pRwSG/O5+yvYcBhi3vzWXun+5l9ctvkDLQQyX8OXSBcqdEBC06fm2WKHqP6H1MMKC0qKDQj1/5y9wI0/S88PdEU4wrtJRCrS0PcBQYJMvytWwWDsrYONJ/jqWbmLAQHNTKQN51GNC7P588+rhScqJIVoeYrD4KwvU2efJkdh+9OwvmfkAykWi3p1NKyXPPPcdXzjyTskx5p7VH7dJlDQZwHadkck++kKe2tpaVK1fy/vTpvD/9faZNm8aypUtxHYdUKoWVSpXUX7V7IgTB5Pr6eg4++GC+d/bZ0ej3tjafxo8zSaWombkQR0oO+f1PSPSrhlyepXc/ydy//BdWbaBH0kbhkxvCD2ybIOFHkTunJUFNV9NDaukTTRGJWRqk0UFFuozIwwgwsoncZKC4IDWRdnxoodVJzeJsHQUJlhbkLLAMKA885b9m1KQtJY2NeY6dMIE999wr0vgqMa2K3ceYez70hvcz1L04+qijmDNjZof0yBKJBLNmzWLxksXsM2ZMp1e+71KEFRJNfX09l1z8KxYsWEAy6bt2DQ0NbNmyhZqaGhrq63EdB9u2SSaTpBIJX6RfB6oJHTxhZKA/Pmz4cC674gqqe1SjXS+aclJit5umCTgm3KDGIHtWMPaLJ5LoWYG7Yj0zr7uDNQ++QJlnECkbtEHoJsupeDmFFlYYo4o4wIRZQe238Jgm68kI8GRQcxU0R0sTjLL3moQAQyWIkHyapkoL1gqHFaYRrfzAbjjnUAeWlikyboVnyKgERx13DEYJ3/q0VBDbKvW34wKc7RMHOuyww7jtr3+LwhKtFjsbg23bbN68mdmzZrPPmDGdund32RiW63m8+957TH/vPVKplH/jlEJJiW1ZpJJJRMrPvBmtm8bJi44vDCEEuXye6p49ufLXv2bvMfugPQ9pqa12ni5yA8M4jZZ+DU3ZwN4kkGRnLea9y29h8xszKE/YSAnG8zBC4snSoLg0TaJ/ktLsX/SeAhxbIDDYnsAyYLSvD69lk7ZW6BMaITDKj60JBNIT/ngoAY7wDwJlfAmbdTrHRhxfWA6BCuw1R0LC89uBXMtXoTCexyC7jH3LevtWgNQoI9BhT2RQOipi6+ojk1XoFu47diy77747M2fO9OsH27GaPM/jnXfe4ZTTTu20ZEgUdN8VC0cFUJZOkykvj26YKYpvbRWj6sgIe1NECkKQLxSoqKjg11f9mqOOOdonq9CyElu7qFv92IB0NZZtU/PWTKZf9Cfyc5dQkUqiPI+C9E0QUTx+vsR6CuSQi2JCIiAeLySegovnejj+kDCwbbQlfcsIUGEa0dPgeoi8g20ESgjySYuEpYpGSwk/USANKwv1NGCQRqGlwAoI3/88IpBu9kksZ2l6FxSL/nA3vcrKGPiJQzGOB1aTNE4JG8f4SNBaU1VVxaRJk3j33XdJBQdzW1BKMWvWLOrq6qioqOjULO4uWzgaTpE2zSaFfBT6NsZvOs1ls1RWVfG7q6/mhJNOxHXdNpVFJcUDUYPyA1ejlM36F6fz3sXXYS1eS7o8iXD8zKQnBLYnSrQPQusKAnmZIstEBWxacB0KRmNsiehTTeWQQVQMH4g1qC/lfXtR3qMaVVbelDZ0XZzaehpqNtOwej3Omg3ULFtJbuUqnI31JFyDUhZKWXhKkrNhbTaLIwW2EEjPdydd6ZNVmIUEgzQGW2sGpyupWrGFt395PfvlXIadcCTS9TB23JizvV2qEPuOHUsykejQ/AGlFKvXrGbd2nVUVFR06neI67C2p9kGOI7DqFGjuOq3v2XylIOjYQltGwjB1Bjjb1DPaGxLsWXqLN66+DrSS9ZipRMY1290doSIhkb4xemiSWEU8JTBQwejryTG1TQ6BfIJG2v3QQw6cCwDxu1Des8RpAf3RWbKfC2aNtAn8g8MzqY6nIUr2Dx3IWvfeJ/178wmu34zKccfeb/FK/h+nymt5VI6ZGY/roWGXo7FsLJykkZQtTHLe7/+M0krSf8TDsbRHkqoIOju68yrmMI+kksVEtRe++xNzz592FRTg93W4BTjdzRsqqlh8aJFjNptVKdYWOF7xr2E28tiC04irTUDhwxh2LBhkTkd1VwF+kLNb7YXBJhFEEdKKkXjrEW8efn1JJatxU77qqQIv95J4JOVJw3CiChoHllUHthSYhyPbKGA26OM6qMmsPfxR9Brvz1JDe4Hliily1DXStCyvxqSshLYvSuxe+9N2aS9GXDKcWTnr2D12++z/JEXWbVwPpuMgwrkSMJEQFAoEcTDNEL4ha0V2AyUaTzXQyYsMhvrmfabWzgwk6LH4fvjeB6WkBgRjQiNF9t2IK5hw4czfMRw1q5dE03dbs1tUEpR39jI4kWLW7TWdiZkXFG8/RaC53kkEgleeeklPvvZz/KXW/9CNpuNSCusYWl+wyV+Fs0VGqME3rL1vHfJTXhzl5FMJtps/RFBPEgajRAaIXyto1zWobE8TY8vHM3kGy5i8jU/ZdBnjiA1vD9aaLTnRYqiAj9JIKSIEgbRQxY9QhIyBu15uNrBpC3K9hvFiG9+lkP+eimVpxzBap1DBhOkWziwA4E/gzaacjtBubDQ+MWuCctCrKrh/StuJTd9IUopXLRPzDFZbZd1qrWmrKyM4cNHoD3dAc/Bf87iJYtLSK8ziDZOvGyH2FXJRTWGRCLBqlWruORXv+L73/0eM2fMiFoaWmo6lcGkVA2o+hzvX3s7dW/OoirpD0Vt74M7yi/EFErguA5btEPy8PHsf80FTPzNuVQfvj9eJoX23KZx9EqVKopu2xdFK7BQfrbQ1eQLBaxeVRT6VVPvBpK8rb12KNdrDNUqSZlukmmWnke5beHMX8603/0Ns6YmaC0xCDdep9sznjV02FD/urY1pTyIywpg9apVvuRPJxo5Mr55ZruSFgFpJRMJ0qkUTz31FF8/8+vce/c9SClRUpUG+YP399AkkCz916OsffRl0qkEjvZoTx1eCz+gjZQUsnlEdSWjf/hlDrrhZ/Q6dhLGtjCO9ttvlIVQ0m/3+YjhOssELq6SCCVJSAnGsGL5anBN266D8VN/yhh6iQQpLf1i2eAfV7skUzabXn2P2Tf8C8txgVi9YXtj8JDB2AmrXQs+VCLdvHkz2Wxjp0onxxZW0Y0R25cJwRgqystZv24tF/70p1xx+RU0NjaWuogEtUeWYvPrM5n1t/tImbDi3A/Et/k2AlJaoevyJMaOZvz1F7L7D78EVeUUPA8vUCONgq7Bv5RH20MJOnDFvEDozx/o6hPY6voaXNW22yC1/zksA71EEsv4JQ7hZ5MIlOeRsW2W3v80Kx56wZ+7J2MTa7sS1qDBVFZUttluE5X7SMGW2tpoBFhnGRa7LGFJKaNHOOsunHcXzrzbHqavDiRlLKW46cYbOe/cc9mwfkPRGCW/AUbX1PPBn+5BrtuEbUm/Msq0TxrKGGrzWaqOP5iDbvglVYeMp6A9LC1IolDCD+i74XScYBWaj8LQ4WxXmoTihPT7GGs3bcJqo3o6TBgYAbYQ9FC+npYMDS8hkMGUICkh5XjM+9M9ZD9YipJ2rJO1HdG7V2/Ky8v9eGY7B7mSvl5ZbW1t29ZzbGHtGLZuzDZSV18fteRs2rSJLVu2UF9XR2NjI4VCIcrufZihncWEp4OG5ExZOQ8+8AA/PPtsVi5bjmVZeNpDCsHyu59k02vTqbSTGO3hSnCUCERegpvVzOISAjbj0Pf0TzDhyh9jDeuH63hYKIwEIzXCr11HolHaIDy/J9CRH7HmTDRZawQtS45bIFdbh0UbZB9U4HsYEkjKgzEYIsp0SjwhcKRfH1cuLAqLVjLvlv8gcoXt6Lvvwt5EcG8yFRkyFRVtNkCbKI4lyTZm2RIQVmfB2tVulDGGZDLJ977/fdatW4dt2TQ2NlBXX08+m2XLps3U1NSwcuVK1q5dS21tLSYIpCds29dQp6kBuq0+rNKb7tdOZcrLeen5F/jRD87hDzfdwJDBQ2iYt5gP7nuIck+jlcRDYHvgyiaRKk8KbMc/7woKpNTUunl6n/JJJlx4FroqQUFrv/o86MUxQpS6u0VqC9ZHcYGLXyNq+RF4jkdDQyMmmNjSGtFp6buRloakBiMNWphAuiQQBDTB59eGCjvJ4qdfpP9RE+h30pFo10Mo6fcoUuTaxknEbSKsZDJJeXk5rjEkhGh5BmXk8gvyhTyNDQ2d+pl3ycLRVCrFqaee2urfF/IF1q1by+LFS5g1ayazZs7inXfeYcWyZbieRyqZxGqr2K65GRuUOBWkxtKQyWR49fXX+OkFP+Hma69n2b+fIL9kFRV2GVmhsYLaKi883QI7yVUGpQVCKhryDn1OOIQDLvgOJmPjug6WZZfKyDSPzYnta1pvVbKlDa7rtZl5DMsaEi6gBK7lV8MbGehyhf2PgYqEE7iOyYYCc+96mN6TJyB7ZqKexhIXN+asbUI6nY56aTtCGPl8nvr6+k51CXfZSvfWNK2llCSSCQYPGcLgIUM49LBDAVi+bDlvvPE6jz/2OK+//jqba2qwbZtEIuE3Abfhp0iC+X3BIeZgKC8v44UXnuO6757L4RsEPb0ErmXQ0tdbD4lOB5Qj0WhA2wInm6P8wL0Z/9Pvonum8bygeTuQsN3Zuza0NrPZRgqu0677LIJKfUsolLIwnsDSpYoSTU3g4HmaapWi5s25rHjoBYZ949No7WKEDLTNiv3EmLI6ChXEb9ub7h0lbIKZhp0VxtllY1ihOH9xkD0MvoduXqjjroMpx0OGDuELp5zCX/76F+65917O+MpXyGQygYls2tQf1/gbL8z8aQzGaDKJBPlp80mvrcOyfG2qcONGulbCb0uxta+/7joO3pBe7HfBt7CH9KHgekglo6LKYlXIHXpzW+AF1/PwXLdNwgotPk+C0oKE57t2KujgdkVT07YKr0UwDaPCgSUPPYuzZoOflcREPZhCxFT1YUlgW36vs0qwdtnC0a0mMhdVdTf/WUhooSa2FwxK2Hfsvvzu91fzr7vu4oSTTsLxPPL5fDRNd6vWm8C9CWVfLG1whMdgnWRceR+MhJzyrY5EYF1FQfFQ8M/4OuoFDLt96/NUHrAn2jWkpIWlfQliZCBVXOx77cRratt2yXzG1gncl7HBUri29F3JQPNdhIKCFBG8gJw0yLRN/awFrH5iqj+eTBfH0GJs+33rWDJJiKYWe6M792rHdVgdvVBSRjrjocrDfvuP508338zvrr6agYMG0dDQ0HIgXjSpKJhAuthyDONVD/poi0bh4skm9c5iKWL/XxotBXWuQ68jDmTE5z/hjxsPKpApkraRO+umtrBu06l02420IWFJgXZd7N49GHbSETQkJG5kVfkErQOrSukmqRwtBMmCx8pHX0LX1AcbyURV8zG2DQWnQD6fb5+0gprC0AuJXcIuZSc3f5hSa6VIcdRxHKSSnPrF07j9jn9wzLHHks1mt7LYQjE9IwSuEjjC0N+z2NPu4fcA4hdRErhKvrvkE5gWgYXlGpxeVYz+5inITBo8g5F+sNqoIuliEwgBdkI4Rwjfymrfm9RIabHJzdHvhEOpnrgXXq6AFL7IgzR+sN0NSEsYsDVYriaZsNkyeyFb3p7rx7hCczL2B7cZ+Xw+Wq+m3dIGf4R9KC+zs9tzIpcwVmtoJchSUgtAk4wxTS6kbdlR0/Mee+7Jn26+ma989Uxy+Ty6mSpDNIhU+GPuh6tyBlspdJAyFqZJM7040yeCY6XRdRh47BSqD9gbrT2EbBJi3yrcLHYCWYmtT0DLtikrb39QgTACpST19XXkq9LsdcbJ5BOqtNpdm2jwRagXZgAjBaahkWVPvgCuX8lvdqL7+3GKXeWyORobG7FUaVt580spg4bpZCJBpiITW1jdgsBaslhEk/Ss67qUV2S4/NdX8O3vfpd8oeDHvEQomRnk+zSkNQxLVVJhJMI0pcbChRJWgusgmOx6LrJvD0Z9/pNgBXVgskljr8QN3Blk1Qo/WJZFRWXFVmTd0uITQMHz2LB+I5WH7k/1AWPIFQpo5bO0FWiDhZr0vta8/8YJIVn37izyK9ajhIgJ60Nu/tq6Wurq6qLYa6v3V/hdDKmyMqqqqzsp3iZC8oxt6e1xMZVS0bTiX/zi53z3u9+l4DhBIFlEAXeDpgc2Q5OVKC+QlmnztSWO69HvwH3JjB0Z9HVJNB+xvWY7f/+wK6C6R49263qMAKMkOafA6uXLocxm1KePomArXNrWzxdGkLITuKs3UvPeHFSxIRyT1jZh9arV1NXWtjth2xiDNoaKigrKy8s7xSWMrL34tm1f0goHWvzs5z/n1FNP9QPxUkabyjOavirFAFIYraNgfKuLxTN4qSSDj5uCSaqg70502RvXs2fPklO8ZdIJyNZxWb5ypf+8Q8eTGj0cL++0TcKBLrzdkGfNa++BZwLV1ZitthUrVq6goaHBV8Rt634FB1JVVSVlZWWd+pljwtrOpBVWwFu2xc9/+QsmT55MfUMjRio/MK59wqo0gWsnROtbTQg8xyU1dCCZiXvhBvXdGNolus5Cv7592xwdFRpDlhEoDYuXLsExmtSgvvSfMh43nEvYCjwh8IQhhaT2g6U4G+swMqg6i52FbcLKlSv9BHMHrCXtaXr06EkymezUIRQxYe2IiyolnufRu3dvfvaLn9OjV08KQWV9SsMAq5yECXrqZOt+nRBQ8Fx6H7AvyYG9EV5RMLuLJsb69x9AMplqdVGHNGZpkEqyYtlSsnX1gKDvlP0xvSrRrtvqlzOAJwwyYZFbvobs4hVFFl3MWB2JX4VZwaVLl3ZI28oEQcJBgwa1az3vyM8dE9YOJi3XdTnwwAP52te/RiGfx0JQZSz62WVI7de2mDYixsJAwVZUj9k9kl0pbmLuatYlwKhRo+jVs2errU8CgYfAEWDZNqvXrGH9uvUAZPYahT2kL57jRk3mJdc00AkzBjxL4NXUsmX2In8RGxNr/G3D2ty0aRMLFy7EtqwO3VepFCOGD+80wootrJ20MIwxnPGlM9hr9B7++C9sqrGDKdICoZuaeEvKE4RAux5272oyo4eXLB5oyp51NcIaOmwo/Qb0x3Fa6ykMh69qbKVYt2E9M2fMACDRI0NmxEDcIGgvi6V0gmSqP4Xav3aWY6hb7MfA2nIjY2xtqcybN4/lS5dht9OZELaoVWQyjBo1qvP3VHwLd9wGDglr4MCBnHLaaWTdPBlLUWUUWgg8KfxiSe3P7tPB3VDBRvUcl8zQgZSPGNRMekH42cVOZCzRwvc1xlBeXs7gwYMpuG4TATf7nMoEI7+UJJ/N8dbbb/u/Zyuq990dz7ZAN72HIewAkHhB0F0YUBLqV63F5F3ftY49wjaJp3hA8JyZs6jbsgWrhYB7SSVPUNLQq3dvhg4fFh3EMWF9vFcLJ5x4AsOHDcXWkBKW7w5GVpXfXhJubB1YEK7RVA7sT6I6gwmsjq5cchSWM+w+evcOEZ7BVwyYOWMG+Zwvvdt/332gogxXuyXiheA3gRvRVLQmpaBuwwYK9Y3NbNQYrbp2gfb+tPfe6/DzXMdh0KCB9O7Tp5Xjaud8fhMo08bYwRdaG8PQYcM4+KCDsD1DkqK6LFGk5RSSVjAkwhOGdJ8eTUee7LoT24tP6bFjx1JWVtZ+PVYgjLho4UJmz54NgNW7GlFdHpB2cE0iF9iUuJZKSLy6BvTm2mBYQrze2rOwhBAsX7GCt956q8OabsYYxo0bT1k6jWd0pyo2xIS1k04GBBx22GFUJtL+WK8id6e5m6UxCGP8Zt/qTNHviS5bH1ncPzl27H4MHDiwjThW00awbIsN6zfw/HPP+4SVSaEqyjBe4PoFNmVL31lIia7L4myqixfaNljAb731FitXrmy17zO04kXwHMuyGD9unP93OtbD+tgj9PnHjx/P0IGD0AUHLUXJAtHF1lMQjtHSIMvTLcYWOsky7xA59+3Xlz322APHccK/aP05wciv16e+Ri6Xwy5PYpWlAxfYRE3d4Mf5ROga4s/L04153PpcC/Qfo6X743kezz/3fHSYtGRhNYVK/d/v2bMXe+yxR3BIdO6iiwlrZyyU4L/9+w9g6MBBOG4TYUVuYdHvmcA1VLaNzJRtxU2iC28IrTVKKQ466KCm4R1tZaG0JpVM8v7703nn7XeQ5eUk7AQqqGCPhl0I2GqWtBBIV2OcePxXRywUpRQLFy3ilVde8ZVyO6A06jgOEyZMYNjw4UEPaExYuwZlaUOqvIx+/QbgGB1lBGWRbRC5hEHsJozjdEccdNBBVFdX47rtk4lt2WzesoXHHn0U47rYUgXNz6VC7SLMHAaSDgY/CCt16ErHaA9PP/UUa9asJpFIdIjktNYceeQR2MkEnufRma3HcdB9Z15sQCibXgP6RRrkWprI+tBFwSkTStkI0bRAgrpIUzQTsCs6QKH7u/vo0ey5115k83kIfiaafego4RdMMnrqySdZsWAhqWQaN3AHmy6Rr0mhi/zicIgrRdOBYmy97kL1jM2bNvHQgw9iSdXuRHGJwHVdevbuzdjx44pc/s614GPC2kkGVnify6syCClKegHDWYMl9UoStOeh8/mSxWda+HOXcws9j7LyMo499tiS2JJpVioVZki1MSRsizWrV/PEAw/h5PN4qklNtCn03nzDCD97KOPYVVvQxm/pevqpp5gzcxapZLLN4LkIDstCvsDEiRPZc6+9onH1nU0YMWHtpFMucn9SKUwgNyOMLxdcPI0+jF+Fle5uYzYiPRXesKIyiC7KWgAcfvjh9OndG6doMIURpcTsi/IFs1iV5O7b72DBvA9IJBMQyCVHgfYiwpOh3GjCRnbAvdl1Y1caiaCuro577rk3cOtEu/fPVx2RHH300SQSiUiU0XTakhIxYe1Uszy41Tnt4gh/vqA0ghI14yLRAWN8girUNm7lMupAvbRLB9+NZvQeo5l88MHkC4VWN0mxCrVUCmdzLdkttQgpIkKWuknETwAy6EvSxiDLkiQqy2KXsLW1p33L6NGHH+HNN94gnU63Wx8nhMBxHYYMHcoRRx5R5A52nkpDbGF1EmqdPI1BDXfxHD7Z/M/BWLDchi2l27sb9PgKITDaoCyLkz59kn9CG7OVuambLURhoIdKUiGtpl8smt9lSp4RVD5XlqF6VEZ1ajFCy8pEooo1Gzdy5513dpxwBOQdhyOOOIIhQ4dG7mBnk1UcdN95IaxoKy3euIZ64UHQrFusvlxc3uAXvEsKK9dBvYsUMorfiG6wNcM+ysMPP5xx48bR2NjoB+SLKvubk5XShn6JMjJIP2oVjPwqvo6hW+l7hBqrRxWyKkPMVy24dQFB/fOOf/Lu229Tlk53uJShd+/enBJMR+8qcx985d64n2HnbOBALmXeyqXU6YLffmNMU/DdFKs1+NaDbdnULl1Fw4p1AHjBJt5Kw72ruoVaU1FZyUknnVSSrWqJzFUw7advopwyI6NMqC4icVlE2EYKXK2p7NMLqzwVuNwxY0XWq9ZYSjFn1mz+9c9/RqoMQog2LXQhBLl8nskHH8zYcfttbZWZzt5Hsab7zrBlfTG+fJ4la1ZR6xX8jFcbpi8YLKVoWLuBugVL/Mr3IscnDER3edfQGE4++WT2HTOGXD4PQeBWmKZvYgC0IYOkl51GeVvvjbDKXQRxPz+mJcgM7I+wFVob4qXctH4E/hi6P/zhD6xYsSJSCjXGtDh0oviQyWQyfPH00yPJ767AEaao7i7GjucrANav28iiVatYawr+SHYpotaT4gyYaZIyQDXk2TJrfhi1aRbOMu3W03QFt7B33z6ccsopflYvCN75A1IFRgq0EGhc+mHTnxSe0dFUoLATICQwiV+bJj2NpyTluw2BwELb1TtzQkIKY1f33nU3Tz3xxNaN6K14VUIIstkshxx6KFMOmdJyzKuzGp+D8XqxS7gzFlKwWGbNnMmSVSuoES55NMojqjBq7VRJCcX6d2fhbalDySIVTtH+xJ2uZGV9/gtfYN+xY8k1ZrGMiIbFog0yqLcalqyiN7bv+rayaH2JZDCeR7JfT6r3GRWGbGKPEPA8D6UUM6ZP59prronuQUfgui6ZTIZvfvNbJJPJiPi6xB4K1sQOdQmNMXha+w9P43lehx7hKPiPjXkeXOOXX3qZrOOwTuTYaArYUhW5Ri0/17YtaucuYvOMBUh8LSNNkGHTLUSwuyJheZqevXvx5a98xf+ZbjInFQIPQxrB3lYlZW47y9YYhBQUHJfUsAGkBveN3MNd/egNlRU2btjAxRddzLp166Kewfb2uZSSbC7HSZ/+NJMPPigaWddl1hE7uA4rvEhKSv+hJEqpDj3CU7lYIbFbE5YU1KzbyOuvTcVKJlhn8ixx6/HaCYBiQFsCsaWedU+/DlqXuEfdxaIQUqK15jMnn8zBU6ZQn29ECIkWBmM8HO0wTJWzmyzH014b6g7Cn5KtoSANPfcdjVVZ5tcabRX12rXcQM/zEIDruFz166t4/fXXKQ+mcIe/19ahkisU6DdgAN/45jdRgc57RwZU7GxYO5KstmzZwv/uu9+fLhvO5gv2mW62vMKAX3l5GZ/7/OepqqqKLlZ3TQxEQU4peebpp5g/bx6pdIot+Tzz3VomlvfGKrTt1hnAVpK1z73ByK98msRugzCeASW2anXpuowFRkOmIsMPfngO77z3Hq7rYkmJayBTgPGpHlQIiRZ+ZXarboExoA1ejwz9puwfWGx+EEvsYj5huD90sM6UZXHjDX/k3nvvJVNe3uogkK1eRwgcx+XrX/8ae4/ZJ1Lc6Ep7L3QJrR35JrZlcc899zB16lQy5eV+LKe4wbcZYWEMrudRXlbOaad/sUv50B92QUkpqa2t5T///Q/G8/ymUqVY5NSyXucYKC20aWOgqtEoW+EsX8fKB59n5LlfJpRU7k5pMSl9baUphx7Cl884gz/fcguVmQy4mt1MOWNTvTGubpu8ha/H5OYLqL0GUzFmpL+cdmE9d2MMJnAF7/7XXVx33XXtTsJpbv02NDay//7j+OqZZ3Z5j2aHsEEoFFZWXs5RRx1FJpOhsrKSispKqioqWnxUVlRQXV1FOpXin3fcwbp16yKrq7supDAl/MCDDzL1jddJp9Lg+iS2TmdZkd0StOG0PXRUGUgC8x98lsYPliGURHgm0oXv8gZWEbEKBN/77ncZs/feNOSypI1gfHk/ehoLTNuTsDXgBsS159FTSPSqxLgeRtJqoH5XcActy+KB+//HZZddhtHaT850gHiEEFGg/fwLfkKPHj26rJEQxbB2FKOGi/ToY46mR3U1hXweozWu8R9RMD4Kynu4rkcqleK9d9/l9ttui9Liprito6uuS1P6CE+9JYsWc8sttwSxOYlEoJDU2YJ3vRoaJCS0wBOgEUh/uipKS1/3XQv/kUygl61mzj/ug7wTKBn4MTAvsMTQGoPGCyNjpgtcjyBFIDAoAcbT9B80kPN//jPSlmIv0hyY6ol0PYz045dK+092pJ9XUNp/aOmvqy2WYI6zBYTvtrjGKxnq8XGucCguXQhdt//dfz8X/vSn5BobfesqUGLQLVwHYUon4hQKBc4880yOPOrIjjVGd7L7u+OyhEHWZsyYMYwdO5Z8Ph9dDN3OzUgmk9xx2+288OxzWJbV5It3ZbNfND3Ci1vI57n66qtZuHAhiUQC4Wkc4cuk2Cjme/UsNY2gfHKyjMGTGiP8R6j9ZIJm4nTSZtXDL7DuiakIS1EINqoMJQ+ExI8Ayc4nq+Ca+ITqKy0YKRFKoT3NUccdx3lf+xZT7N5UezKaNegGqgyh+S+COixP+E3QQijmmUZ+ct1vufXPtyAthUIGZL1rWFTFltV9/72PC396IdlsFtu22x/8EQjAWpZFfX09k6dM4Zxzzonizl02Xix2cC9h6BYmUyk+/ZnPIIvmn8l2boqlLGq31PKrX/2KhQsW+qQV3oguej1Ns0UlleKWm27m4QcfJFNWhtEeoWifFoaEFmzB5Z2G9TRKvxapuHJdC/CEwCD8CncDlhFk6h3m/ulucnOX+VabqwOZGn9Tq2AaD8J0XiV88LYeBAQaCuM0jZSwPc3h5YPZQ1YhPC/I/mmEEXjCVxtNuH4DuBb+91NGsAWPd5yNbMLhyit/ze+u+g2m4KCUjS4KMn8cQ1pRiESAUoq//eWv/OzCC8llc9iBBExLZ+hWcSAlyWazDBw8mF/+4hdUVlf5skZdOCYaFY7uwOMgis8cd9xxjBkzhsZcrkP+sdaadCrFwgUL+OlPfsK6tetQUuJ6XTtSoY3xA+hKcu9d93DjDTdgWxZSg9QGR5lgaKrBUQJtWbyfr2GZ14CRgoL0rSxlfLVNZYzfwhPElJULiUSS3NxlTLvmNmRNLcby21JM5Bo2cYbovNUVWUmWAekF8sbGgPYLG1ff9zxL7niMMmlhAAeDQqC0ICglDarcfYpTngFLMcerZW5hMyqZRErFjX+8np+efwEb12/AUhba8zAfozq+4oPccz0syyKfzXH5ZZdx+eWXUygUsBN2VJwcWlGtkXZoSEjL4uc//znj9h+P53rRcImuWMqww4Pu4ReXQf1Nrz69+dIZZ6BNx812n7TSTH3lFc798Y9Zu2YNllK4nruVadzZJjpBTMEYjZKK+/97H7/61cUU8nmUVFErhBe0m1gaXAlIyXpL80p+HVklSHhN40D92I1AGeM3BgOOBZ7R2GVJNjz7JrOu/QcqX8BIg/Q0ViBLE8YqOnvZiSICdQUUtIdUik2vv8/MP9xOWX3ezx4KP4QQxlf8Kc8GVxo86Vf0Sw0bpMfrubVkFViOQQlBWTLF3ffcw7e+821mzpjRYh1fd67nK4lXWYrlS5dxzg/O4aY/3YQlJbZSoHWHDqfQ5csXCpx11ll87gufx/U8pPILSUILqytaWiYoGt6h6YAoZmU0J5x0IpMmTaKxoaF9K0s0SYhkMhmee/YZvved7zJ//nxs5ce0usICDD+DF2RmlFTc9ve/+wHQbJZE0N4Qis8pb2v9K52weMvbzAKngaSwcTAUlH+LRCBeJ3UQCxKBxWFcMrbFsv88yZxrbkcVPLQC4Xh+TVL42l2BsIQ/rqxgHBLKon76fN689Aa8dTVYSRuMDqRloCCbJmH77jN+n6FnyKds3slv4AOnFpSFpf3BHmhDJpNh6uuv8bUzv8a/77k3KifpKuvkI1lVQcW5Uoqnn3qKr3zlKzz66KNkysq22RoSQlDf0MDnP/95zvnRD/2MYDercVTf+MY3LhkaiHTtCGYVUqKNobysjB49evLkk08G6gWi3XhQiGQiyZLFi3np5VcYPnw4o0aN8rWSgpvZWSdCePpZlkVDfT1XXXEl1/3hOjytSQQBUBMJ0AlUkJzVRbEmiSAvDNl8juGqgoy0caUhoYNgc5Apk0Umvu359UgJYO17cyg05ug/YQwmZeNpg5TCt1g6s5QylIUxoI1LUtnUvzuPN37+B5i9lFQq4WuNBxanBNygg9lI/9qowM21UCxTBR6tW8pGG7TVZBGE8xxTiQS1dbU8/cwzLFuyhL322ouePXv6B0onr5MPg5BsLcti48aN/P7qq/n1lb9m/fr1lHdA12qrja4U9fX1HHn00fz26qupqKwoab/pytlBKSULFizgySef3PGEhfE3kPY0I0eNZPWaNbz99tu+EH5rF92UTkIxWpNMJNmwfh3PPvMMuXyO/caOI5VKNblmBG7FDo4lF6eVlVJIKXn3nXf56U8u4IH7/0cikYjqYCITO/w+AVGFrXQCUELguRrTu4qjJ02BZWtRQmB54CqJlgJlAjWC4ILIoA3YSIEtJZvemUXtmvX0mLg3VqYMtIcsGpNVOvcwtGHauFamJVNp618RNEkpaFHqBhoBnjEIYVDSYv2L7/DOJddjzV5GeSqJCcIDSjeRuP9fEcT5AotSChxL8VzdSqZRi7FsvKL3idoStT93TwrB9GnTefHFF1FKsddee/kjrQxdtnOi6dYaPM8vrg7X1iMPP8LPfnohjzz8MEpKEoGuVej2iyJLtrVbppSitq6OAw+axB+vv56+/fpGTdJdOjNYRFgLFyzkiSee2AkWlmjaOEopxowZw8uvvMKaVaujxszm7y0C4hFNP8BgSCQSFAoFXnnlVd577z369O7NiJEjAnF8v0o+IrxmbulHcfki81x7GO3rVEkp2bBuPbfc8mcuv+wy5syaRXl5+VbPoxmRhgF0IYBgAEVjPs8PLziX0875Hsvfeg9nxTos28ZokMagCCZDi+I5hsE1NZCSinUzF1AzZyG9hw0mOagvjjCY4Hr418CUuGkm+DCi+Qo3rfl2LRFW019Ggd4g8u8Zg5ISWXBZcc8TvHfVn2HZWtKpJAVjwrxPIMYXkqpPzpYRuMqP89lYvOvV8mR2FfUJBcI0WZvFBe5FpRCpVIoN69fz7HPP8f606fSo7sGIkSOjwHJrLSudsXG18SWCwoZ/pRRCCt59+x2uvOJKbrz+elatWEGmPINs7gIWldK0FUeua2hgwsSJXPfHPzJs2DC/LcqyuoXFGRLW/AXzdw5hNc9OVFZWMnLkSJ568ikKhQJSyW3+8HYiwYL583nqqadYMH8BvXv1on///n5GruimfpTakuJgbWhNhY3c69au5b777ueSSy7hgfvvp5DPk26uOdTBAGhDfT2f/eznuPCCn5DoWUHVgH4sf+VtTLaALX11hoJq6lRXukhOOcgkOlKQthI481ax/NV3UckEVbsNQaaSAbXpQEfKL5MQQvijxYKap5KpPUHNU1MNWAtWJiCN73aGsUYR1IMZ4/t3SkmcRWv44Np/Mv/W/2DX5UgG2axiV7VkEo4JLVCBYwkSWrLBONxXv4hlqoBUFh1JJYR9dUpK5n7wAU899TTz582jZ8+eDOg/AMu2ovVYHGje2Rs4CilI6Y/QkpL3p0/nj9f9kd/+9re8+cYbJBIJ7A5MaW7NDaxraGDihAlcf8P1jBo1Ctd1u5V7vNMtrJYIYPjw4ZSVlfHC888jhNr2wF9QXOq5LtOmTeOxxx5jxowZKCXJlJdTWVUVnS7+QAQdpbp1s6xR2Iulg9EtxaqMomgh5XI5Zs+axd13382vr7iSf997LxvWraMsnUYphfF0x+sIgpvQkM0yceJErr32Wqp69SDnOVSMGIxSNiumvkvS+HEvP1NGlC0M60TBt0KU8TNsKmFjahtY8fJbbJm3mIo+vUgP6oeQEg+NGziCMjCxQkmWcCCGv3FN0cEtmn5O0y81kV5YquBvPJRASoWub2D1Ay8w7cpb2PT826SVjWVJLNf4RFds5YUEWJyIUIBrqEtI/l2/iBm6Fq8sVaTK0LH1JoTw14nn8v706Tz+6KPMnjWLdDJFnz59SJelI+u8eE7fjtoHxWuu2ALKZnO8/dZb3PDH6/ntb3/LK6+8gvY8ysvKPqx1gBCCuvp6phxyCNdffz3DR47AcRwsZXXpmFVbFtbjTzyBeOWVV8yUKVN2Sg9R1F2uNVIqfnvVVVx//fWUpdPt9tSV3A9TdGOCptpcLoeyLIYOHcohhx7KgQceyJ577snQoUPJVFZs82d1HYf169Yzf/58Zs2axcsvv8z0adOoqanBtiwSyQRK+GUbRaGcbTr5Ro4axd///ndG7zEax/MQSiG0RuU07/3mz6y88yF6WEl/Zl/ALFo0jbJXJiiVCLJsOlIxFeSzWUTvKgYcfwTDPnsUVfvthlF+zZPwNBp8UqbZlAdhoqGlkbehm9lYYTW/9mNMRvoFfXpzPTVTp7PwP4+xceo0Eo7BSiT8thzPlATiwz8XZ01FoLJacF3cVILRF5zJ/Wtmc+2NN2LJBEnLwtNuSYyzo5BS4rkuuVyeRCrJvmPH8slPfZLDjziCvfbaq2TtF0uyNLe82ht3ZYrE+SOCCg+KZvtr4cKFvPbaazz6yCO89eZb1Dc0kEok/FBJcMC2lQkUzdddkSZYQ0MDxx9/PL/57W/p268vruuWlHx0F8IKY22PP/EEP/q/H+08wiq+SH5TsK/dc8mvLuHvf/sbZeXlyG0gLUyTaxQuKq01Bceh4LooKenRowfDhw9nxMiRDBwwgH79+lHdowcVFRkSdjAcUvrThBsa6qmtrWXjho2sWbOGZcuWsXDhQtasWUM2m0UIQSqRwFIqCr7TbPN1IHGGUIqGxkaGDh3KjTfeyIQDJuK5HljK/3vXgASzuZG3fnkt6x5/lV52yo9HCYGjfJfNMmAHYneu8snKCgpUjRR4lkA7Hk7eRfTvSd9D92fQcVOoPmBvVK+qUhdP61YCVqYkDxLsidJ1ojXZxSupeXU6q5+Yyua3Z6OyeWTaBimwXZ8AHdVkSYliS7G4xFWAZyCXtNn3gq8x5KsnYTD89e+3cd2vf0t9fT2p8rRfHLotBocJ410CpL9O8vk8rufRu08fJk6cyKSDDuLAAw5g99GjqWjhgGuznivizyL3Um5NCLlsjiWLF/P222/z+huv88brb7Bq5UoAUskkUvk1e9t6cEdGq5Q4rovneZzx5S/zy4t+SSaTidzA7qh80kRYj/Oj//u/ziGsJtIS5PN5Lr/0Mp+00umo4fmjxMrCglXXdXEcJ2rrkUIglcK2bVTRdzXGUHAcPNf1XZKwrsqysG070vL6SAWIxo/r1DU0MGq33fjDddcx8YCJfgBUWZHVJDR4widSb+VG3vjFdWx86U2qk2Uox9c6d8K0f+CFumHrivatLkM4JTmIW7marFNAV5ZRtucIeu6/J30njKFin5Gk+/SAZHIbTE8PXd9A/ZI1bJ45jw3vzGbz+x+QX7IG2/VIJZI+WRqN7TVZTl7QOiSKAvYhcYVtSK72yKZsxv30Wwz98gm4nkYGBPnUE09y2aW/YtHCxWQymQ7fi5Ip00UcIoXACIHrOOTzeQB69e7NyJEjGb377ozeYw/23HNPhgwdSs+ePSmvyEQaUe3eam3IZbPU1NSwetUqFsyfz6zZs5k7dy6LFi1i3dq1uK5LMpn0M5gfcm2J4syxUjQ2NlJeUcG5557LN7/1LZSlukXpQpckrNYCjkopXMfh97+7mltuvhkgGo39kbOTLdyg4pOy2Nxu7aZujyrp8DXr6+sZN348V//+94wZuy+O40Tp6yZXyX+/gtEkpEVhwSrevPhaNrzxPr1VCqV9gvKKhjQIU+QqBq/jy7QYCCvJjT+4wXU9csaDijRlA/pSPqg/VSMGkx4+AKtfL6yqKlQyERk9Xj6P29CAt34zzqqN1C5dScPy1TSsWU9hXQ2JnEvKtsFWuNIny0hpwvjFn15RwsAEcbfo/4PShbzWOCnJuHO/xYCvn0TBeNie9KVjjMZWijlzZnHlZVfw3LPPkUqlsCyrzXXSvJWyJbc9zGIb/CLNQiGP6/qbvKKigh49etC7d28qe/SgX7++9O7dm+qqamzb9g8+yyKXzaK1pra2lpqaGtauXcuGDRvYvHkzGzdupHbz5sglS9g2lm2XVOOH3sG2EoowTYM+6hsb2HOvvfjlRRdx1DFHY7TfJhbug+4qghkS1hNPPMEPd6ZL2NZpFJrPf/vb3/j91VdTt6WWTLoMT3stz7JrQQTQFJ/cXeiCy2CgZX22kaOPOpqrfnMVQ4cNa7eY0eAPWpBKkVu8htd+fi2512dQHbiyngz67YLJOf4Id5+0nGBqdBjjKgnGBsF0ozXG8d0HF4NrK0glEAkbacmodsu4GhwXkXMg72AJgRS+9aksGc1Q1EU16sWOpWh2b8Kq/4QHnjB4UiIcyJYn2OcnZzLkjBPReAgRjNgIFB9MsHAbGxv54x+u4/bbb6O+rp6ysrIWlRo6WJ3R5iEXzhhwXXcrqWETHHJCiJKm6/AaSymRSmEphVUkqLetB6BoIz4qpaRQKADwyU99il/88pcMGTa0WxbKdiSG9cP/+2HnE1Z4Ez3Pb+x8/vnnueTiX7Fg3jzKgvaDjlhbXZGwwuyisiy++vWvc/7551FRURHdhA5dG1cjLElh8Rqm/uIaGl97nyo75csESxHErPxNbQWaUXnlk5Wl24itBXVPBIeFMQah/b5IEQrphaqmQoL04zImCGiZNuKNzUkrHNUV/lyZgISkwPUM2XSC/c7/BoO/cjye8Xx3vYXNFlohQgieeeZZrrn6aqZNm0YqmcS2rK2ycB8VbfXWCToQt2znOn0Ywgq/v2cM2YYGhgwZwtnnnMMZZ5yBsq2S4PrHAc2D7jutrKEjC8MYw8iRIzn66KPYWFPDrNmz0VqXSL6KVmQIxDacpDvkOxR9riYzvZFhw4dz+eWX8/2zvk8ymdzmOhi/XshB9aqi/8SxrP1gMY2LVvluMx5K++0poSUVErbswB6RYTQ93FiBQJ4UEiWk31Yl/dcHfELTpl0piOJDo3hYhjRNpQsogaM9GssT7HfBNxnyleNxja8aIIVs9VqErs5uu43iU5/6JABz5s6lvr4eu8jV2t4H6od6bJeF1fQZwtBBNoi5feYzn+G3V1/NUccc7ScsAiWM7j4Lofm191tzdnLhaEdjTp7n0aNHD4499liGDRvK3LlzWbNmjV8wGtSQmA5slJ3++QElJUJAYzaLUIpTTz2V3/3+ag6aPDmqZA7JqqPXWgs/DmSMIVldycD9x7J+4RLqFi2nzLIjraiwVsvSYOumSckdKbeQxu9PTAQtMX7hZtDDGKlF+LEwT9JEYG2Qt2ghc6qCe6ctieO41JUFAfYvHe/HW6QKSi3auM6yaZ1kMhkOP+JwJk2axMaNG1m4cCH5fJ5EkChp3sLSHUWy/ANEgJTkCwXy+Txj9xvLpZdcyjk/PIc+/friOa5P9Eq2axl2W8Kav6BrEVbxDdJaY9kWY8aM4ZhjjiWRSLBo0SJqamoQSpYELTv7Mwsh/JHeQGNjIwAHTT6YX13yK773/e/To0cP3KCi+sMGQAUCC4l2NXavCvqN25v1C5dQv2QVqYSN1CbKGIZlAyGRtedGh7FAowRGSKSQCNdguQah/UJQT0pcUdRWZNrWJRKtmLph3Ec7mmwmyfiffouhZxyPKzQgUSFZiY4dbqESxuDBg/nUpz7F7ruPZt369SxfvhzXcaIMb3NLr6tv0IhwpMQIQbZQIJfLMXLUKH54zjn84qJfMn7/8cigDlAFbTZhVrg7B9lbt7B8wuoSMazmH9BfYH71cRjrmTH9fe7817946sknWbVqFbZlkU6lSrItneHGuq5LLpcjlU4zbv/xnP7F0znxpBMpK5oJ99EWkGmKVAvQnoe0FLlFq3jrl9ez6Y1p9FJJlGtwi1xDr0hAr9XvoA1IicagjCJfKFAQIHtWQCqBzDnoTfVYrkcymQAJQmukNrjBmLGOeTQiGD8v8DyNk0oy9qffYNAZx6MxfsV9oCYpP8RaKR5LVbullvvvv4/7/3sf06dPJ5/PU5ZOYQfJiq4uN1McHsnl82hjGDVqFJ/97Gc59YunMXjw4GjdfZxiVe3GsB4Pyhpefvllc8ghh3TJaRnFRBR+tpkzZ/LIQw/zzDPPMO+DD3AKBb/fqvg03QHB1+KF5LmuX7flefTr25eDDj6YTx3/KY469lgqMhlf/XN7LagwZCSaVEWN52ILm9ziNUy95BoaXp1OH6sM1xgKyvgaWh10Ny0jkB5sMS5lY0cz5LiD6bnvaKiuQDTmqJ+3lOXPvU7Na9OoLBikEjhBFF20Y7mFMSuNwbN8xVgnbTHmJ99myBkn4GgXS/jXSIelF2Lb10d4aEXWBlC7eQtPPvkUDz34IG++8Qa1tVtIJpMlca6uQl7h+grXVr5QwLZt9h07lhNOPIkTTzqRwUOaiGpbwwofm6D7j37U9Syslkzj4pFZ4WfcsH4Dr7zyCi+88DyvTZ3KmtVrKBQKKCmxLCsSPWutrkoWScC0FKQsJr0wve24LlJJKjIV7L3PPhx11FEcfvjh7Dt2bORubO+q4qjZGBNNyLEM4GqErXCWruXVn/+ehqkzqEgmcfHdQ0uLphiYaCKPUF8L4wvrJTxBg4GBXzmePb93Cna/Xk1vHJY2ZHMsuvcJFvzxX6Rqs3gJiaVbVjUNC0HBj6UZ47ubrmvIltuMv+DrDPjKiX6LjZBIpJ+wkGydXtzGtRLJ/xRZXK7j8vrrr/PYY4/y/LPPsWL5cjzPI5FI+OtESMJ6+zADuoPZqUTd0wSzOAuFAhhDz169OPSQQzjhxBM59LDDqKyuiqzI4oTOrkBW3Yqw2lqcxS4AwNKlS5n7wVxmzJjBm6+9ztLFS9i0aRO5XA7XdUviXcWnkwgWULGrEEqPhKSWTCapqKigT98+7LvfOA6c5Pco7r777mQymWAxBd13O/nUC79TftE63vjlNdS/No1qO4VnNK6UwZQZ31W0PZ9AHOm3ySgNFppNaIZ88dPs94tvQVLhaY1E+kQjwBjXFx5UFkv++Rizf30LVa5Bi7ACbGvCMkL4MTVt/Kp3z/jtNj/7JoO+fLyfzRJqh8aUwnVSnJFdsmQJ77z9Ns8+8yxvvPEGG9atwykUUFJhJ/22K1EUrC8+KD+q9VTcluZ5Ho7jBPLEiqrqasbsO4ZPHPcJJk+ezF577YkI9uLHqaZqu7iE3Y2wiq2kYhIKkc1mWb9mLatXr2bZ8uWsWL6cFStWsH79eurq6igUChSCbEt4WoXElEgkSKfTvgzJgAEMGTKEIUOGMGjQIPr060fvPr1LPkdoTX30ONVHuBaOh7AVhSVrePvn19H48nQqUimyuBjpk3I4TcfSTdIxCS1w8nnk+N2ZcvOliIE9wXOQUoEQeP6wMITRGM8vVLUczYzzrmHtQ8+RLEs360EsqrsKEgCeErieJleeZN/zv8HgLx+PY1wsVIu9djsqHhpaJ+Ehp7VmyeLFzJwxk9emTmXGjBksX76cjRs3UnAcX8crsNRDa102t8RLdKmKK5hNidCjp7XfHhYoiAohqK6uZuDAgey1114cOPkgxu+/P6NGjvSLYIus+jChsyujuYVlddcvEhKVMU3iZ8YY0uk0Q0cMZ+iI4UxichO5OC4Fp0AhX8BxHVzHgaBKWyrpx8Esi0QyScK2oxOupVM7JKcu0f1uCTztYA3vz8Qrf8xbv/wjNS+/S3Uy6Q+oFf6QreL2HWn8CvxGaRh1xCTUwJ442kMqK6qaD5VRQWAshaMNVtJi4OeOY8Xzr5MoeE09y6aUsLQwoCSO69FYlmDsT7/J4C9+ypfwEWqblRY+agA7rE3yikpLRo4axchRo/j0yZ+hdssWli1dxowZM5g7dy7Lli1j1apVrF+/npqaGuobGvz7X5REae7mFTcth2simUzSo2dPevbuxcCBAxk8aBB77LEHY/bdl1EjR9Grd6+tKuvBvzfFRLUruYBtnD7+cu+uZNVSQDyyvppJfAghUJaizC6LTrGOuBMlKeYikmrr8+z8iwFS+D111oh+TLzih7x58XVseWUaVVbSlw4mCHzLpsk02mhkZYaqcXsABstIPAQajQrK0iW+W6gBO/hZZvRg7H69cJesxrItX9uLZhOXpUC7mlxZkrEXfoOhX/pUYDFIbDqvOLlYdy1UfBBCUFlVxZix+zJm7L7BXxo2bdrEunXrWLJkCWvXrqW2tpYtW7ZQ39BAPpej4DglEhaWUiSTSdLpNFVVVVRXV9OzZ0+GDR/GgIED6dmzJ7Ztb7XOPO1F5QitkdQuT1bF5/PH7QtFksyCFgPoHQnyF1tw3eAbIxCogCSSI/oz6dfn8trPrmHDa+9TZSWxHA8lhK+rFegzu55HKpWivGeF/xrG+GPCgmGnngwEAw0o0WRFWWUJysrLyGkT1WSZQF/F4Otx4RgKZWn2u+BMBp1+vE/+YRzGdCq3N/05IIcS2ZhAZ0sKSY9ePenRqyd77LXndo2pFWtsCSH8WF47h3KMJshd4Us2L9ps6VESjO9GKeOouMCAUBLteSSG9OWgK86lfMp+bPKyuEr4U5iLXDghBaYxi7ul0d9M0jQNvw1fsuj3TSCkrvN5dGMW1exTeMZglMTVHg1lCcb85FsMOuMEtKcRQgYV7J04jbqdtRE2K0spI4HCMEAeNUE7jq9dht+0P3XqVO688042btxY8rva002PIpIKM9e7chD9I9yoXYewPt6+PYHiqcYR2i/odFySw/pxyKU/ps+BY9ni5jGBAoNvFflxnEJjlk2zF/oWl/EnGeqiglNjmoL0XiA7umXJaurXb0TaqqRSXiqFozVe0mbChd9m4JePw0WjlYwq4wVhg3XnXquOvH9LBGPZNspSvPXWW/z43B/zrW99i7POOouHH3mkJIEjVdGjHXIy7TxiNLOwPm4jvXe9kyf8j8QKHsKyMEaTGNGPCVecT9WUCdQVctjGVyTVgMaXKV397BtQUxvIpPivI7TfZGwMeAiEJ5DGgOex4pEXoTaLUdKXPTZgpEQXDG4yxT4Xfpf+Z3wCz2iUEChR7J5LX/mBrXfjTtmgrUyZaS9UAH790/Rp0zn/3PP42le+yh23/4PNmzZx3HHHMXHChIisPupHEs1/tqPYrJ3X7YqkGcQhY9P040JaUWuLCPrQXI/kiH4ccNkPKTt0HLWFPEjpNyEbj1QiQcO7H7Dwbw9iC4mxFcZxcY3GFQZlNJan0VIjlcWaJ15lzcMvUiltLDdQNVV+b2BDJsG+P/kGg0//JJ72oik9W/UGbkUaTfEjX4mh46Plt+cY+tZeIyyJeODBBznt1FP5+9/+xpbNmznssMO4+urfc9tttzFmzJjSQuembxbVqpmi4lRT/E9xiU6rvNLKP83UIbYF2uiSR/SaorS2riuxgzHm4xd0j1G02JTC81zskf056PIf89ovrqP+pWlUpJNgPJCClGtYfPv/MJkku51xAqKyvCTrJwEcj7VPvsTsq/5Gui6PkwiGZUhF3vPIViYZd/43GHT6J3Hw/Abqdg7CqLBTyKgmq/lT2urFbN6d8GHqCJu/RmvlA0IItmzeTDabZfLBB3P6l07nxBNPorpHdel7mxKF+majalv+cziTsHlxqRDFAyxFW+dUiyTe2jVr3jHSHJ7x2xNkV4vjdueyhhgdgyeMP9ZdeySH9ePgK8/l9Z9fQ+3U6VTYNnlhIClI5R0WX3MH616fxshTPkn1niNIplLkjUPDktUs/d+zbHj6DVK1OXSZP1vQUoqC49JQkWS/C7/FoNM+ifa8oDewdYIIVRbC+BD4fX+NjY1+qYEQ2AmbTCZTUoLSEiEZDGtWr6GioiLqOthmaMPqNaup7lFNuqyspF0r3PRr167lxONPYOL+E+jbty99+vWNnhsSgPF0SYtQsTMVSjC3xjphnVhxcN7oUH3RlFhbxUSlWyDW0H1tbnE1v+YN9fXU1zfguA4CsCyL8vIMmYpM9AbNiTT8DJ2iNxd8jpiwPs4BymCzSCTG1SSG9WHSb87jzZ9dQ92r0ygXCTQGyxiqUDQ8/x7T3piF6lVNyrbxXBdnUy00ZEnZNnbCwnE1thG4WpOtSLH/Bd9k0GmfDMT3ZCAKSItlJcUV55s3beaZZ57hheefZ9GiRWyuqYkIK5FK0rtPH3bfbXcOO/wwDjroIHr37t1EDkG86P777ueyyy7jwAMO5PfX/J6qqqoOF1mGG/iOf97B1VdfzRFHHclvfvMbyoKBuOEU5kcffZSLLrqIcWP346abbqIsU47nemyqqeGGG25g6dKlWEVqp1tZiEFRabHMjSjahIV8nkmTJ/Od734by7IpFAr8/e9/59WXXyGZSGw1/q7Y7dTNzCyBwHEKfPrTn+ELX/h8dL1cz8O2LHKNWV5++WWefuopPpg7l5qaGpyCg8Evcu3VsyfDhg/n4ClTmDxlCkOGDkFrD2M6v8QnHA4TE9bH2SUsEq4TUqI9TXJIHw688se8+Ys/0vDiO1Sm0xSUpmAZ0laChAfZtRvRrr/x05YkYSXICU2DgqQROAW/KHT8hd9hwGnHorVfFErRYNbWoJTipRde5De/+Q1zZs2mobEhGsahlPKnHQUV31NfeZV/33svo3ffnQsvvJCjjj0G7XqR7/jyiy+xZOEisvWNLJg3nwkHTOwwYUkE2vV47tlnWbZ0Ka9NncqGDRsYNmxYSW/pm2++yZLFi2moq2fmrFkccOABKEsxbfp0brjhBjzX9bsiirTew+bmZDIZiQ3mg+ZmigQKhZQUcjnemzaNE086kWHDhrF4yRKuv/561q9ZG0lsR/VrLeiLlVxbKamvb2BTzSY+/elPk0gmcF0X27KYNXMmV1x+Ba+//jq5xkZyuRxSKixLRWSgtcZ+7TX+98ADDBo8mB/96Eecctqprb7fznYJYwvrY89YTQtdC+PXYrkFksP6ccCV/8dbF/+BLc++Q6oiDdJgXI1lBOVCom0wSmKMRrv+qHtLCLysQ7ZXOWN/+m0GnHIcjnFRKBRNQzybb65w0yqleP211znnrLPZuGEDyrYYs88+TDnkEIYOG0ZFRQX5fJ5169Yxc+ZM3n33XWo2buTlV16h8uabOezww7EsC8/ToHw3JplKYdnWtgWdiyorErZNKuXrZbXoXilFKpkklUggZZNw4L5j9+Wcc85h1YoVW1WoK6Wor6vjnXffJZvN0q9vX/YbN67F4uRCocCBkybRt6/vZrqe67tnZWUMGTqUPffeq1nbomg1hhXGqE484UTshB1d87lz5nD2WWczd84cErbN8BEjOOSwwxg5ciRV1VV4rsf69euZ+8Fc3nrzLTauX8/M99/nuuuu4xOf+ATVPXv417dTOzpEHMP6uCNU2SwePa+UjXE8ksP6Mum35zH76jtY+ciLlNX5Vg4JiVGhwWDIWX5sReUd8jlDYu8RHHjumfQ+bnKkuiAjmb6Wj+HQ/aqvq+ea3/+eDRvWk0ql+OwXPs///fjHDB4yZKvnFPIFZsyYwSOPPMybb73FZ04+GRUQUxSkh2hC8rYt/nCoqozkaEQ065rS8W+Bxo42Juov1VrTr18/Lr38MrQTqIGErprWKNti0fwFnH766axbv56jjj6am265Jdh0xWzuM6e0VMn7KQTZbJYJEydy7XV/KFWMKCYs0yyiZ/BJNZjLGT7n1lv+zOxZs8hkMkyZMoWLLr6Y0XvusXXM0/P44IMPePKJJ3j+uec5/PDDyVRUdI1exjjovgsYWJTGN6zwh7ZCaw+7f2/GXfkD+hw+gQX3PkHj+wsQm+vxhN/fJrW/QrIpG7X7AAYddTB7nH4SiRH9/dO7pek2ouVgu5SSObNnM336dJRlsfvo0fzilxfRo2cPHM/f9CHxGWNIJBNMmDiBCRMn0NDQQHl5eXTKN8+3mQ97cUIxV2NKAtzNrRjR7KuFQW1jDDIYkBI+JSy8NbKJ9HT4uVUoYl1EWYEyQ+guY4qyl1BSeNoR0jD4/Yn+4F7FksVLeP2110jYNr169+aiSy9h9O67R+9ZnCGVUrL33nuz9957893vfY90Ot11MoWhhRUXju6iAXmp0K6HTioGffpwBhw5kU2zFrBp+gdsXrqSfEMOqWyq+vag1z67UT12NMmhA4LpLPpDyZ4sWbKUfD6P53lMnjyZHj17+JOvLUVz/dLQvQGayKpLedsimuIDopS3zdaE7ddZiei/UcFvkepIc8IvKd7sgJUT1nIpqXzSAtasWU1NTQ2e1uyxxx4MG9ry3MKSxIgxlAUZ066mFGHFhaO7MGkp6Z/onofIlNHroP3oddB+4GlwACXBbspIhdXvhJOqt82ax3WdrTKGoavaEiGoogblYkugeENrtj3Nblr52YehxOa6XkKIlsfQiSKzTmz9XVvKBJbwVwf2aeleLhIM1E2vrdoYoVb8WbrqqLC4l3CX9hlF4Kr4rogXNOyCAEuA9NVUtfaQoQwKIhohto3WPAMHDsS2LCzb5sUXXmDV8hUoy8JzfQXOYl2zYnLaqgCyBWrZlo1l2tiszUnxw7vjTXG2SEFkG57X3HLq2MGwddV8z549yVRksGybGTNm+C55qA/meVF2sLkoZtcLyAYxvtgl3HWhAVf4D6SIlDaNFBgpQGqMNMEwVQFCI+S2Ky74VeCw9z77MGq33dCex5KlSzn/vPN47513UJaKhogUa+i3tjaLY0pRVf42rGPZzCqLNviHsSq22TQT7cagws+gjY6uQ7FqRGuP5p0Bxhh222139t9/fwoFhy21tfzswgt5/tnnopiZLJJibm7ldUXiinsJd2WX0PiaV8qA0MHGEwYjNK40uEIGZad+l6IWEoxA6m3TtQpLAfr07cO5555HWRCTeuXVV/jm17/Bef/3Y554/AmWLV+ONgbLsiJ3sC3i+ngavUWJBzsR1aeF16S9R9hjGL6GZVt8/+yzGDxkMPlsjnkffMDZZ53F9773Pe6//34WLlyI47qRFHRYgtJVr3mcJdylXcIo0kHIQZLSqdEytCCCQaqe8EdxbesxJ6VfqPnJ4z/JH/R1XHXllSxatIi1a9dy1113cf8DD9B/QH/GjR/H5EkHMW78ePbZZ5+omPTDqiF0Qd+mfSsrqOVaumQJDzzwgN+mE2RHjSkuimgK+Luex4gRI9h///1LXGnP85g4cSI33nADl112GTPef58tmzfz0AMP8uTjT9CnTx/23XdfJk8+iAkTJjBmnzG+Xn9Xcw/jOqwYxU5SiYiCKKqSL/JimpLyH27BCeXXBx1/4gmM2Xdf7r3nHp5++mkWLFhAQ0MDi+YvYMnCRTz8vwep7tGDyZMnc/rpp3Pk0Uf5tBrUc23v078reRnG+IoVyWSSt996i6mvvto6zRUpyOYdh2HDhvHf//6X4SNHlDQ5a62ZPOVg7rzrX/znP//h8cce87sM6utZuWwZK5Yt49mnniKTybD/+P35/KmncMKJJ5JIJaPi0+LYX6f0EgaPmLBitLwIRct/IbYDMXiex9BhQ7ngpz/hG9/4Bm+//Tavv/46b77xBvMXLKC+vp5Nmzbx2GOP8eyzz/Llr3yFn/70J5RlMjvEVdmp7k9HyDGoxUqn05SXl7c76EQIQa5QYPCQwVEDN4itrnmvXr343ve+xxlfOoPp06bx+uuv8/rUqcydO5fNmzdTV1/Piy+/xEuvvsJTTz/NJZdcQr/+/dDaIGXnkrqJC0djdFaMRimFNr4aQa8+vfnEpz7JJz71STbVbGLOnNm88MKLPPTgg6xcuRJjDH+++WaM1lxy6SVIpZrXinczj7DtFhcRuM/5fJ4jjjyS8y64AB0UgjZ/nii6CFpr+g8cQL/+/Xw9siL3udjS0lpTUVnBIYcdyiGHHUpDfQNz585l6quv8tCDD/LBBx9gWxb333cfuVyO62+4gUxFppkSRRzDirHLWXQCIZuG2AoEPXr24OApUzh4yhS++MXTuOb31/Dwww9Tnslw5513ctRRR3Hk0Uf5pRfSryA3Qnw4qy+I0UQKEAQV6R/ZNN0OEa4gSdGzVy/2DSf5dBBRC1ELPmQYVNfaoI1GAOWZ8qij4Iunn85NN93EHbffTmVFBU8+8QQPPfAgZ3z1y01SM50evIgRo5MsrXATKaWQSkazA13XZeSoUfz+2ms44sgjKBQK5LJZnnnmmRLLwh81L3Bch7q6+hL3oV3ZYyHI53PU1dUBoCw/E7fNLuKO0hEOAuYlwy0CC6m1hwmE90K115aut29tieCaN9Vjua5Ln759+NUlv+K0006LBg0/+9yzuI6LELJTM4ciHkIRo9NiES0sfBNsUiH94HyhUCCdTvO5z30Oy1JIAevWrIlUPQEGDRxIMpGgsaGRxYsXlSzujrSxrF27lhUrVvizCSsqqaqq6hoxrGauXEcfHyZ5ELroSilc1wXgi1/8IpWVFWAMK5Yvp6Gujq6Sl4gJK8ZOQ2gFaM9s1WJT/D++u+jHXHr26EkqmULroqBz8IS9996bRCKBMYZnn30Wx3FK5v+1hnAM/GuvvcaqVatQSjFq5EgymcyOT+XvSCulhckRzceVFXuyzZvjZWBFlZeXk0ymIku0K8QJo2bzeBvF2FkLLrIGrKYCxbA6O9rMoqnaW0rJ/Pnzqa+vR0pJj549g3Yi/9fHjR/PsGHDsJTizTfe4Oknn/ID+kHhY3EBpQ600x3HwbIsNm2s4c47/gnaL9A85phjos9UQixFFt322bmifdLBH8UmzNaDJtp7hAMlwkxj8bgypRRekfvYnAy8QDVj6dKl1NbWghD079+f8kx5lwgh+IoeMWLsBMsKYNmyZVxw/vlcc/Xv2bBufVNriDFoz8PTGuNphAHbsli7Zg3//e9/kVJiWRYHHjgpWrza0/Tu24fTvvhF/7muyxWXX86bb7yJFbT5CMDTQdW29gnTtm22bNrMZZdeyswZM/A8lwkTJ3Dk0Ue1WJwaBuOLLZISI0ZsX74K5Lf8mHng5hW7fG0+ZJOUcajWUFNTw2WXXMqvLrqYxYsXR+1XoaUZxcaMxk4kyOfz3HnnnRQKBYwxTJgwATuRKNXk6kTEWcIYO4WwLMvisccf40833UTP6h4888wznH766Rx62KEMHToMZTXJ1RRyeWbMmMG1117L7NmzcVyXyZMnc8yxx0SEFU6bOf1Lp/Pa1Kk88cQTrFq1irPPOotvfvObHHfccQwZOgQ74SuJas9j3dp1vPvuu9x+2228OnUqAD169+a8Cy6gsqoqkl1pbkyJZiQl2PHFkzLQe9+8aVNTdXsH4nIAlZWVfvGvEEx95VWuv/56bMviheef55RTT+WYY45h5KiRJJLJJjfZdZk7ew4333wzL7zwAp7nMXLUKE4++eTomnd67DMmrBg7y5wHmDhhIvvttx9LFi5i2rvv8v777zN06FDG7DOGYcOHUZZOU1dXz6JFC3nv3XfZWFOD1pqRo0Zx8cUXU9WjumR6jtaayqoqrvrNb3A9j+eeeYbVK1dyxRVXcNttt7HnnnvSp08fpJTU1daycOFCFi5cSGM2ixCCvv368uurruLgQ6aUWBDNN2cU0BYdt5qK3bFtiVgb7WftkmVlTJ06lVO+cMo2uUy5XI7Pfe5z/OCH5wCwz5gxTJo0iffeeYf58+bx6yuu4La//Y0xY8cyfPjwSJZ6yZIlvPPOO6xZsyZSVL3k0ksZNmL4hxqhtqPWUExYMXY4wqLFiRMncvvtt/Ovf97Js88+y8qVK5k3bx5z5syJ4hPhSZpMJqmuruaQww7jvPPPZ8+99sRzXVSk8OlntzzPY8Cggdx000389S9/4d//+Q8rV65k4cKFzJ8/3yeiwGIRQmAnElT36MHBUw7mB+ecw/jx41sUtAvNKa01dfX1ZDKZlq2MVloDLcvvgWxoaMB1HN/VM0VTQVp5fqosRSKZoG5VHQ0NDSxcvHibrnNDYyM9e/bke2efhVCSESNH8Je//pV/3303jzzyCEuWLGH58uUsWLSoRNXB/8wWVVVVjB8/nvPPP5+DDp6M67ofSqxxR1lY4uWXXzaHHHJIl2DRGB9fRFmeYI2tWLaCmTNnMHPmTObPn8/atWvJ5/MkEgkGDBjAXnvtxUEHHcT+EyZEAxVaGgAa1hGFNVRLFy/hrbfeYvr06f74sM2bMVqTSqcZNGgQe++9NwcccAD7jR+HbdstkxXgueHQjNe4/PLLGTduHBf+7Gf+3L7wxG9hRHJTANvjT9ffwBOPP85ZP/gBnz75M7iei5SqtACziLA0Bu1pXnj+ed56802U7DhRFKs8HHHUkRx44IHRFG0VXLN1a9Yya9YsZsyYwbx581ixYgW5fA5LWfTt25c99tiDAw48kAMOPICKigq/wp7OHfEV9jI+8cQT/OhHP0K88sorZsqUKTFhxdjhp2O4AGVR4BfAc1wK+Txe4Eal0qnoVG+u1NDaBOiQKIqtgUIuj+M4kfWRLisrsWbacgNDnXchBbnGLIlEEmnJ0uGi7c1014ZcLkcqUD/QGKQo1XQvJixf10tHv/NR44ZIgTDBoA7YarpPY2OjP4BDCH/6kNXkcLmB5ExnozlhxS5hjJ0KpZRvSQTTakCgLIu0bZV4SV6QWZQQTatp1U0oIh1Pa39yjVIkUkkSqeRWG6A4sxZN0GnZbMFzPVJl6ahMoCNqEcVDJFLpNNrT/jQbOiZz7AW66i0RaUcPhqZZhgIZkn/YihTch/Ly8q2uTbG73RVlkmPCirHD0XzBq3DjRprtbFVQqTpg7Tef8QeghD++q/kGLibMbfnMKhjBVSxz3DRyq53PFcStpJIR+W79y83/KFA7SBlBFpFXS9enK8SqYsKK0Q0IrY3dvx2JsjNepysr+nYnteGmuY0xYsSI0U0QE1aMGDFiwooRI0aMmLBixIgRE1aMGDFidFXEAn4xYsToNoizhDFixIhdwhgxYsSIXcIYMWLs0i5hLJEcI0aMbmVlxYQVI0aMboOYsGLEiNEtrKuYsGLEiBFbWDFixIixvREH3WPEiNGt3EJpjImvRIwYMbqHS9idRLxixIix67qDsUsYI0aMbuMOxi5hjBgxuo2FFbuEMWLE6DYWFsRlDTFixOhGiAkrRowY3ccljC9FjBgxYgsrRowYMbYTohhWnCWMESNGt3EJ4yxhjBgxYpcwRowYMbajSxhXuseIEaNbkVZMWDFixOgWiC2sGDFidBuygjiGFSNGjNgljBEjRoztj5iwYsSI0S2sqziGFSNGjNgljBEjRoztiTjoHiNGjG5lXcWEFSNGjNjCihEjRowdgZiwYsSIEbuEMWLEiBFbWDFixIgJK0aMGDG6KuKge4wYMWILK0aMGDFiwooRI0ZMWPEliBEjRldHPDUnRowY3c/CiqfmxIgRI3YJY8SIESMmrBgxYuxqiOuwYsSIEVtYMWLEiBETVowYMWLCii9BjBgxujriOqwYMWJ0O9KK67BixIjRLRCP+YoRI0a3ISuIY1gxYsToJu5gPJcwRowYsUsYI0aMGLFLGCNGjF3WJYwJK0aMGLGFFSNGjBixhRUjRoxdGjFhxYgRIyasGDFixNheMMb4ZQ1xL2GMGDG6OqLC0biXMEaMGN3BwopdwhgxYnQbCysmrBgxYnQrxIQVI0aMmLBixIgRY3shjGH9P/Z5lS/k3Ex7AAAAAElFTkSuQmCC" alt="Logo 360Suites">
+      <div class="brand-divider"></div>
+      <div>
+        <p class="eyebrow-tool">Ferramenta oficial 360Suites</p>
+        <h1>Motor de Depreciação e Valor Residual</h1>
+        <p>Estimativa técnica para reembolso, manutenção e encerramento de unidades — sob a marca 360Suites.</p>
+      </div>
+    </div>
+  </div>
+
+
+
+  <div class="notice notice-info noprint">
+    <span>ℹ️</span>
+    <div><b>Não é laudo pericial nem avaliação oficial.</b> Esta calculadora oferece uma estimativa técnica de valor residual/reposição para os bens da sua unidade 360Suites, útil para consulta, manutenção e eventuais negociações de reposição — não constitui avaliação contábil, fiscal ou jurídica.</div>
+  </div>
+
+  <!-- ===================== CALCULADORA ===================== -->
+  <div class="view active" id="view-calc">
+    <div class="autonote noprint"><span class="dot"></span> O resultado é recalculado automaticamente a cada campo preenchido</div>
+    <div class="layout">
+      <div id="steps"></div>
+
+      <div class="result-panel noprint">
+        <div class="result-card">
+          <div class="eyebrow">Valor residual estimado</div>
+          <div class="value mono" id="rp-value">R$ 0,00</div>
+          <div class="sub" id="rp-sub">Valor de referência após depreciação</div>
+        </div>
+        <div class="breakdown">
+          <h3>Vida útil consumida</h3>
+          <div class="bd-row"><span class="k">Tempo de uso</span><span class="v" id="bd-uso">—</span></div>
+          <div class="bd-row"><span class="k">Vida útil ajustada</span><span class="v" id="bd-vu">—</span></div>
+          <div class="meter"><div id="bd-meter" style="width:0%"></div></div>
+          <div class="bd-row" style="border-bottom:none; padding-top:8px"><span class="k">% consumido</span><span class="v" id="bd-pct">0%</span></div>
+        </div>
+        <div class="breakdown">
+          <h3>Resumo financeiro</h3>
+          <div class="bd-row"><span class="k">Valor base</span><span class="v mono" id="bd-base">—</span></div>
+          <div class="bd-row"><span class="k">Depreciação acumulada</span><span class="v mono" id="bd-dep">—</span></div>
+          <div class="bd-row"><span class="k">Dano extraordinário</span><span class="v mono" id="bd-dano">—</span></div>
+          <div class="bd-row"><span class="k">Total reposição</span><span class="v mono" id="bd-total">—</span></div>
+        </div>
+        <button class="btn btn-primary" id="btn-save" style="width:100%">Salvar análise</button>
+        <button class="btn btn-outline" id="btn-copy" style="width:100%">Copiar memória de cálculo</button>
+        <button class="btn btn-outline" id="btn-print" style="width:100%">Imprimir / salvar em PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    Motor de Depreciação 360Suites &middot; Estimativa técnica para consulta dos proprietários sobre reposição e manutenção de bens.<br>
+    Não constitui laudo pericial, avaliação contábil, fiscal ou oficial.
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   ARQUITETURA — camadas isoladas conforme especificação:
+   1. DATA (entrada do usuário)               -> state.form
+   2. VIDA ÚTIL padrão por categoria          -> RULES.usefulLife
+   3. FATORES de ajuste (qualidade/intensid.) -> RULES.qualityFactor / intensityFactor
+   4. MOTOR de depreciação (curva híbrida)    -> Engine.depreciate()
+   5. CÁLCULO de valor residual               -> Engine.compute()
+   6. ANÁLISE de dano                          -> Engine.damage()
+   7. RELATÓRIO (impressão)                    -> window.print via btn-print
+   8. HISTÓRICO (localStorage)                  -> History.*
+   9. DASHBOARD                                 -> renderPainel()
+   A 360Suites pode alterar vidas úteis, fatores, curva, perda inicial,
+   residual mínimo e regras de ocupação apenas editando o objeto RULES abaixo.
+   ========================================================================= */
+
+const RULES = {
+  // 2) Vida útil padrão (meses) por categoria — configurável
+  usefulLife: {
+    'Cadeira':36, 'Mesa':60, 'Sofá':60, 'Poltrona':48, 'Cama':60, 'Colchão':36,
+    'Guarda-roupa':60, 'Armário':60, 'Criado-mudo':60, 'Televisão':60, 'Geladeira':120,
+    'Micro-ondas':60, 'Máquina de lavar':120, 'Ar-condicionado':120, 'Ventilador':60,
+    'Cafeteira':36, 'Liquidificador':36, 'Utensílio doméstico':24, 'Enxoval':24,
+    'Toalha':18, 'Lençol':24, 'Edredom':24, 'Travesseiro':18, 'Cortina':36,
+    'Tapete':36, 'Luminária':60, 'Eletrônico':60, 'Outro':36
+  },
+  // 5) Fator por qualidade — aplicado sobre a vida útil base
+  qualityFactor: { 'Econômico':0.85, 'Padrão':1.00, 'Intermediário':1.10, 'Premium':1.20 },
+  // 6) Fator por intensidade de uso — aplicado sobre a vida útil ajustada
+  intensityFactor: { 'Baixa':1.10, 'Normal':1.00, 'Alta':0.90, 'Muito alta':0.80 },
+  // Faixas de ocupação (%) -> intensidade efetiva sugerida
+  occupancyBands: [ {max:40,label:'Baixa'}, {max:70,label:'Normal'}, {max:85,label:'Alta'}, {max:100,label:'Muito alta'} ],
+  initialLossDefault: 0.05,     // Fase 1 — perda inicial padrão ao entrar em uso (5%)
+  residualMinDefault: 0.00,     // Valor residual mínimo padrão (0%)
+  // Limites de segurança para não gerar resultados extremos
+  minFactorProduct: 0.5,
+  maxFactorProduct: 1.6
+};
+
+/* ---------------------------- MOTOR MATEMÁTICO ---------------------------- */
+const Engine = (function(){
+
+  function monthsBetween(d1, d2){
+    if(!d1 || !d2) return 0;
+    let months = (d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
+    let days = d2.getDate()-d1.getDate();
+    let dayFrac = days/30.4375;
+    let total = months + dayFrac;
+    return Math.max(0, total);
+  }
+
+  function humanTime(totalMonths){
+    const years = Math.floor(totalMonths/12);
+    const remMonths = Math.floor(totalMonths - years*12);
+    const remDaysFloat = (totalMonths - years*12 - remMonths)*30.4375;
+    const days = Math.round(remDaysFloat);
+    let parts = [];
+    if(years>0) parts.push(years+(years===1?' ano':' anos'));
+    if(remMonths>0) parts.push(remMonths+(remMonths===1?' mês':' meses'));
+    if(days>0 || parts.length===0) parts.push('aprox. '+days+(days===1?' dia':' dias'));
+    return parts.join(', ');
+  }
+
+  // Fase 1 + Fase 2: curva não linear com desaceleração
+  // percentualDepreciado(t) cresce rápido no início e desacelera perto do fim da vida útil
+  function depreciationCurve(fracaoVidaUtil){
+    const x = Math.min(1, Math.max(0, fracaoVidaUtil));
+    // curva suavizada: raiz quadrada dá perda inicial mais acentuada, desacelerando ao final
+    // ajustada para tocar 0 em x=0 e 1 em x=1, com concavidade voltada para baixo
+    return Math.pow(x, 0.72);
+  }
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max,v)); }
+
+  function occupancyToIntensityLabel(pct){
+    if(pct==null || isNaN(pct)) return null;
+    for(const b of RULES.occupancyBands){ if(pct<=b.max) return b.label; }
+    return 'Muito alta';
+  }
+
+  function compute(input){
+    /*
+      input = {
+        category, quality, intensity, occupancyPct,
+        baseValue (valor de reposição atual, já corrigido se aplicável),
+        acquisitionDate, useStartDate, refDate,
+        customUsefulLife (opcional, meses),
+        condition, damageType, damagePct, damageValueManual,
+        residualMinPct, initialLossPct,
+        needsReplacement, replacementCosts:{frete,montagem,instalacao,outros}
+      }
+    */
+    const baseLife = input.customUsefulLife || RULES.usefulLife[input.category] || RULES.usefulLife['Outro'];
+    const qF = RULES.qualityFactor[input.quality] ?? 1;
+    let iF = RULES.intensityFactor[input.intensity] ?? 1;
+
+    // ocupação ajusta a intensidade efetiva, sem gerar extremos
+    let occupancyNote = null;
+    if(input.occupancyPct!=null && !isNaN(input.occupancyPct)){
+      const suggested = occupancyToIntensityLabel(input.occupancyPct);
+      if(suggested && suggested !== input.intensity){
+        occupancyNote = `Ocupação de ${input.occupancyPct}% sugere intensidade "${suggested}", mas foi mantida a intensidade selecionada ("${input.intensity}") informada manualmente.`;
+      }
+    }
+
+    let factorProduct = qF * iF;
+    factorProduct = clamp(factorProduct, RULES.minFactorProduct, RULES.maxFactorProduct);
+    const adjustedLifeMonths = Math.max(1, Math.round(baseLife * factorProduct * 10)/10);
+
+    const acqDate = input.acquisitionDate;
+    const startDate = input.useStartDate || input.acquisitionDate;
+    const refDate = input.refDate;
+    const usedMonths = monthsBetween(startDate, refDate);
+    const usedMonthsClamped = Math.min(usedMonths, adjustedLifeMonths*3); // segurança: nunca deixa passar de 3x sem tratamento
+
+    const lifeFraction = clamp(usedMonths / adjustedLifeMonths, 0, 1);
+    const initialLoss = input.initialLossPct!=null ? input.initialLossPct/100 : RULES.initialLossDefault;
+    const accumulatedDepPct = depreciationCurve(lifeFraction); // 0..1
+
+    const baseValue = input.baseValue || 0;
+    const afterInitial = baseValue * (1-initialLoss);
+    let residual = afterInitial * (1 - accumulatedDepPct);
+
+    const residualMinPct = (input.residualMinPct!=null ? input.residualMinPct : RULES.residualMinDefault)/100;
+    const residualMinValue = baseValue * residualMinPct;
+    if(usedMonths >= adjustedLifeMonths){
+      residual = residualMinValue; // atingiu vida útil
+    } else {
+      residual = Math.max(residual, residualMinValue);
+    }
+    residual = clamp(residual, 0, baseValue);
+
+    const depreciatedValue = baseValue - residual;
+    const totalDepPct = baseValue>0 ? (depreciatedValue/baseValue) : 0;
+
+    // Dano extraordinário
+    let damageValue = 0;
+    let damageNote = '';
+    if(input.damageType === 'parcial'){
+      if(input.damagePct){ damageValue = residual * (input.damagePct/100); damageNote = `Desgaste acima do esperado: ${input.damagePct}% aplicado sobre o valor residual.`; }
+      else if(input.damageValueManual){ damageValue = input.damageValueManual; damageNote = 'Valor de dano informado manualmente.'; }
+    } else if(input.damageType === 'extraordinario'){
+      // referência de reposição = valor de reposição - depreciação já consumida (preserva uso já ocorrido)
+      damageValue = Math.max(0, baseValue - depreciatedValue) - residual + residual; // = residual restante como piso
+      damageValue = input.damageValueManual!=null ? input.damageValueManual : (baseValue - depreciatedValue);
+      damageNote = 'Dano extraordinário: referência de reposição preserva o valor já consumido pelo uso (não é o valor de um bem novo).';
+    } else {
+      damageNote = 'Desgaste compatível com o uso — sem cobrança adicional.';
+    }
+
+    let replacementTotal = null, refundReference = null;
+    if(input.needsReplacement){
+      const c = input.replacementCosts||{};
+      const extra = (c.frete||0)+(c.montagem||0)+(c.instalacao||0)+(c.outros||0);
+      replacementTotal = baseValue + extra;
+      refundReference = replacementTotal - residual;
+    }
+
+    const reachedLife = usedMonths >= adjustedLifeMonths;
+
+    return {
+      baseLife, qF, iF, factorProduct, adjustedLifeMonths,
+      usedMonths, usedMonthsClamped, lifeFraction, initialLoss, accumulatedDepPct,
+      baseValue, afterInitial, residual, depreciatedValue, totalDepPct,
+      residualMinValue, reachedLife, occupancyNote,
+      damageValue, damageNote, replacementTotal, refundReference,
+      humanUsed: humanTime(usedMonths)
+    };
+  }
+
+  return { compute, monthsBetween, humanTime, depreciationCurve };
+})();
+
+/* ------------------------------- HELPERS UI ------------------------------- */
+function brl(v){
+  if(v==null || isNaN(v)) return '—';
+  return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+function parseBRL(str){
+  if(str==null) return 0;
+  if(typeof str==='number') return str;
+  const clean = String(str).replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3},)/g,'').replace(',','.');
+  const v = parseFloat(clean);
+  return isNaN(v)?0:v;
+}
+function fmtBRLInput(el){
+  el.addEventListener('blur', ()=>{
+    const v = parseBRL(el.value);
+    el.value = v ? v.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2}) : '';
+  });
+}
+function toDate(str){
+  if(!str) return null;
+  const d = new Date(str+'T00:00:00');
+  return isNaN(d.getTime()) ? null : d;
+}
+function fmtDate(d){
+  if(!d) return '—';
+  return d.toLocaleDateString('pt-BR');
+}
+function round2(v){ return Math.round(v*100)/100; }
+function uid(){ return 'AN-'+Date.now().toString(36).toUpperCase(); }
+
+/* ------------------------------- STATE ------------------------------- */
+const CATEGORIES = Object.keys(RULES.usefulLife);
+const state = {
+  step: 0,
+  form: {
+    unidade:'', categoria:'Cadeira', categoriaCustom:'', descricao:'', marca:'',
+    valorOriginal:'', dataAquisicao:'', valorReposicao:'',
+    usarCorrecao:false, indiceAnual:6,
+    dataInicioUso:'', dataReferencia: new Date().toISOString().slice(0,10),
+    vidaUtilCustom:'', qualidade:'Padrão', intensidade:'Normal', ocupacao:'',
+    condicao:'Bom', analiseDesgaste:'sim', danoPct:'', danoValor:'',
+    precisaReposicao:false, frete:'', montagem:'', instalacao:'', outrosCustos:'',
+    residualMinPct:0, initialLossPct:5, responsavel:'', proprietario:''
+  }
+};
+
+/* ------------------------------- RENDER FORM (página única, atualização em tempo real) ------------------------------- */
+function renderSteps(){
+  const el = document.getElementById('steps');
+  const f = state.form;
+  let html = '';
+
+  {
+    html += `
+    <div class="section-eyebrow"><div class="num">1</div><div class="lbl">Identificação do bem</div></div>
+    <div class="card">
+      <div class="grid2">
+        <div class="field">
+          <label for="in-unidade">Código da unidade</label>
+          <input id="in-unidade" placeholder="Ex.: PM605" value="${f.unidade}">
+        </div>
+        <div class="field">
+          <label for="in-categoria">Categoria do bem</label>
+          <select id="in-categoria">
+            ${CATEGORIES.map(c=>`<option value="${c}" ${c===f.categoria?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        ${f.categoria==='Outro' ? `
+        <div class="field">
+          <label for="in-cat-custom">Categoria personalizada</label>
+          <input id="in-cat-custom" placeholder="Descreva a categoria" value="${f.categoriaCustom}">
+        </div>` : `<div></div>`}
+        <div class="field">
+          <label for="in-marca">Marca/modelo <span class="tip">(opcional)</span></label>
+          <input id="in-marca" placeholder="Ex.: Tok&Stok — mod. Eames" value="${f.marca}">
+        </div>
+      </div>
+      ${f.categoria==='Enxoval' ? `<div class="notice notice-info" style="margin-top:14px"><span>🧺</span><div><b>Enxoval é um kit de itens com desgastes diferentes entre si.</b> Sempre que possível, valide peça por peça (Lençol, Toalha, Edredom, Travesseiro etc.) — cada uma tem vida útil própria. Use "Enxoval" apenas para um conjunto adquirido e substituído sempre em bloco, na mesma data.</div></div>` : ''}
+      <div class="field" style="margin-top:14px">
+        <label for="in-descricao">Descrição do bem</label>
+        <textarea id="in-descricao" rows="2" placeholder="Ex.: Conjunto com 2 cadeiras de jantar">${f.descricao}</textarea>
+      </div>
+      <div class="grid2" style="margin-top:14px">
+        <div class="field">
+          <label for="in-proprietario">Proprietário <span class="tip">(opcional)</span></label>
+          <input id="in-proprietario" placeholder="Nome do proprietário" value="${f.proprietario}">
+        </div>
+        <div class="field">
+          <label for="in-responsavel">Preenchido por <span class="tip">(proprietário ou equipe 360Suites)</span></label>
+          <input id="in-responsavel" placeholder="Seu nome" value="${f.responsavel}">
+        </div>
+      </div>
+    </div>`;
+  }
+
+  {
+    html += `
+    <div class="section-eyebrow"><div class="num">2</div><div class="lbl">Valores</div></div>
+    <div class="card">
+      <p class="hint">A ferramenta prioriza o valor de reposição atual para o cálculo do residual.</p>
+      <div class="grid2">
+        <div class="field">
+          <label for="in-valor-orig">Valor pago originalmente</label>
+          <input id="in-valor-orig" placeholder="R$ 0,00" value="${f.valorOriginal}">
+        </div>
+        <div class="field">
+          <label for="in-data-aq">Data da aquisição</label>
+          <input type="date" id="in-data-aq" value="${f.dataAquisicao}">
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label for="in-valor-reposicao">Valor de reposição atual <span class="tip">— quanto custaria hoje um bem equivalente, novo?</span></label>
+        <input id="in-valor-reposicao" placeholder="R$ 0,00" value="${f.valorReposicao}">
+      </div>
+      <label class="check" style="margin-top:16px">
+        <input type="checkbox" id="in-usar-correcao" ${f.usarCorrecao?'checked':''}>
+        Utilizar correção monetária sobre o valor original (caso não haja valor de reposição atual)
+      </label>
+      ${f.usarCorrecao?`
+      <div class="grid2" style="margin-top:12px">
+        <div class="field">
+          <label for="in-indice">Índice anual de correção (%)</label>
+          <input type="number" id="in-indice" step="0.1" value="${f.indiceAnual}">
+        </div>
+        <div class="field">
+          <label>Valor atualizado (calculado)</label>
+          <input class="mono" value="${brl(correctedValue())}" readonly style="background:var(--surface-2)">
+        </div>
+      </div>
+      <div class="notice notice-info" style="margin-top:12px"><span>⚠️</span><div><b>Correção monetária ≠ valorização.</b> Ela apenas atualiza a base monetária antes do cálculo de depreciação — não representa ganho de valor do bem.</div></div>
+      `:''}
+    </div>`;
+  }
+
+  {
+    const life = effectiveLife();
+    html += `
+    <div class="section-eyebrow"><div class="num">3</div><div class="lbl">Tempo de uso e vida útil</div></div>
+    <div class="card">
+      <p class="hint">Nunca arredondamos período parcial para ano completo.</p>
+      <div class="grid3">
+        <div class="field">
+          <label for="in-data-aq2">Data de aquisição</label>
+          <input type="date" id="in-data-aq2" value="${f.dataAquisicao}">
+        </div>
+        <div class="field">
+          <label for="in-inicio-uso">Data de início de utilização</label>
+          <input type="date" id="in-inicio-uso" value="${f.dataInicioUso}">
+        </div>
+        <div class="field">
+          <label for="in-data-ref">Data de referência</label>
+          <input type="date" id="in-data-ref" value="${f.dataReferencia}">
+        </div>
+      </div>
+      <div class="breakdown" style="margin-top:16px">
+        <div class="bd-row"><span class="k">Tempo efetivo de uso</span><span class="v" id="time-human">—</span></div>
+        <div class="bd-row"><span class="k">Vida útil padrão da categoria</span><span class="v mono" id="time-base-life">${RULES.usefulLife[f.categoria]||36} meses</span></div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label for="in-vida-custom">Vida útil manual (meses) <span class="tip">— opcional, sobrescreve a tabela padrão</span></label>
+        <input type="number" id="in-vida-custom" placeholder="Deixe em branco para usar o padrão" value="${f.vidaUtilCustom}">
+      </div>
+      <div class="notice notice-info" style="margin-top:14px"><span>📋</span><div><b>Tabela de vida útil configurável.</b> Os valores acima são padrões internos da 360Suites para gestão patrimonial — não representam regra contábil ou fiscal.</div></div>
+    </div>`;
+  }
+
+  {
+    html += `
+    <div class="section-eyebrow"><div class="num">4</div><div class="lbl">Qualidade e intensidade de uso</div></div>
+    <div class="card">
+      <p class="hint">Esses fatores ajustam a vida útil esperada do bem.</p>
+      <div class="field">
+        <label>Qualidade do bem</label>
+        <div class="chiprow" id="chip-qualidade">
+          ${Object.keys(RULES.qualityFactor).map(q=>`<button class="chip ${q===f.qualidade?'sel':''}" data-val="${q}">${q} <span class="mono" style="opacity:.7">×${RULES.qualityFactor[q]}</span></button>`).join('')}
+        </div>
+      </div>
+      <div class="field" style="margin-top:16px">
+        <label>Intensidade de uso da unidade</label>
+        <div class="chiprow" id="chip-intensidade">
+          ${Object.keys(RULES.intensityFactor).map(i=>`<button class="chip ${i===f.intensidade?'sel':''}" data-val="${i}">${i} <span class="mono" style="opacity:.7">×${RULES.intensityFactor[i]}</span></button>`).join('')}
+        </div>
+        <p class="hint" style="margin-top:8px">Baixa: unidade pouco ocupada · Normal: uso residencial/temporário regular · Alta: alta rotatividade de hóspedes · Muito alta: uso intenso, alta ocupação e rotatividade elevada.</p>
+      </div>
+      <div class="field" style="margin-top:6px">
+        <label for="in-ocupacao">Taxa média de ocupação da unidade (%) <span class="tip">(opcional)</span></label>
+        <input type="number" id="in-ocupacao" min="0" max="100" placeholder="Ex.: 84" value="${f.ocupacao}">
+        <p class="hint" style="margin:4px 0 0">0–40% uso baixo · 41–70% normal · 71–85% elevado · 86–100% muito elevado. Serve apenas como referência — não substitui a intensidade selecionada manualmente.</p>
+      </div>
+    </div>`;
+  }
+
+  {
+    html += `
+    <div class="section-eyebrow"><div class="num">5</div><div class="lbl">Condição do bem</div></div>
+    <div class="card">
+      <p class="hint">A condição classifica o estado atual; o dano extraordinário é analisado separadamente.</p>
+      <div class="field">
+        <label>Condição atual</label>
+        <div class="chiprow" id="chip-condicao">
+          ${['Excelente','Bom','Regular','Ruim','Danificado'].map(c=>`<button class="chip ${c===f.condicao?'sel':''}" data-val="${c}">${c}</button>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="section-eyebrow"><div class="num">6</div><div class="lbl">Análise de condição</div></div>
+    <div class="card">
+      <p class="hint">O estado atual do bem é compatível com o desgaste esperado pelo tempo e intensidade de uso?</p>
+      <div class="chiprow" id="chip-desgaste">
+        <button class="chip ${f.analiseDesgaste==='sim'?'sel':''}" data-val="sim">Sim — desgaste natural</button>
+        <button class="chip ${f.analiseDesgaste==='parcial'?'sel':''}" data-val="parcial">Parcialmente — acima do esperado</button>
+        <button class="chip ${f.analiseDesgaste==='extraordinario'?'sel':''}" data-val="extraordinario">Não — dano extraordinário</button>
+      </div>
+      ${f.analiseDesgaste==='parcial'?`
+      <div class="grid2" style="margin-top:14px">
+        <div class="field"><label for="in-dano-pct">Percentual estimado de dano (%)</label><input type="number" id="in-dano-pct" value="${f.danoPct}"></div>
+        <div class="field"><label for="in-dano-valor">Ou valor estimado do dano</label><input id="in-dano-valor" placeholder="R$ 0,00" value="${f.danoValor}"></div>
+      </div>`:''}
+      ${f.analiseDesgaste==='extraordinario'?`
+      <div class="notice notice-warn"><span>⚠️</span><div><b>Dano extraordinário não é automaticamente cobrado pelo valor de um bem novo.</b> O cálculo preserva o valor já consumido pelo uso, usando a depreciação correspondente ao tempo de utilização.</div></div>
+      <div class="field"><label for="in-dano-valor2">Valor manual do dano (opcional — sobrescreve o cálculo automático)</label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
+      `:''}
+    </div>`;
+  }
+
+  {
+    html += `
+    <div class="section-eyebrow"><div class="num">7</div><div class="lbl">Necessidade de reposição</div></div>
+    <div class="card">
+      <p class="hint">Custos adicionais só entram no total se forem informados.</p>
+      <label class="check">
+        <input type="checkbox" id="in-precisa-reposicao" ${f.precisaReposicao?'checked':''}>
+        Bem precisa ser substituído?
+      </label>
+      ${f.precisaReposicao?`
+      <div class="grid2" style="margin-top:14px">
+        <div class="field"><label for="in-frete">Frete</label><input id="in-frete" placeholder="R$ 0,00" value="${f.frete}"></div>
+        <div class="field"><label for="in-montagem">Montagem</label><input id="in-montagem" placeholder="R$ 0,00" value="${f.montagem}"></div>
+        <div class="field"><label for="in-instalacao">Instalação</label><input id="in-instalacao" placeholder="R$ 0,00" value="${f.instalacao}"></div>
+        <div class="field"><label for="in-outros">Outros custos comprovados</label><input id="in-outros" placeholder="R$ 0,00" value="${f.outrosCustos}"></div>
+      </div>`:''}
+      <div class="grid2" style="margin-top:16px">
+        <div class="field"><label for="in-residual-min">Valor residual mínimo (%) <span class="tip">padrão: 0%</span></label><input type="number" id="in-residual-min" value="${f.residualMinPct}"></div>
+        <div class="field"><label for="in-perda-inicial">Perda inicial de uso (%) <span class="tip">padrão: 5%</span></label><input type="number" id="in-perda-inicial" value="${f.initialLossPct}"></div>
+      </div>
+    </div>
+    <div id="memoria-container"></div>
+    `;
+  }
+
+  el.innerHTML = html;
+  attachStepEvents();
+  updateResultPanel();
+  renderMemoria();
+}
+
+function correctedValue(){
+  const f = state.form;
+  const orig = parseBRL(f.valorOriginal);
+  if(!f.usarCorrecao || !f.dataAquisicao) return orig;
+  const years = Engine.monthsBetween(toDate(f.dataAquisicao), toDate(f.dataReferencia))/12;
+  const idx = (f.indiceAnual||0)/100;
+  return orig * Math.pow(1+idx, years);
+}
+
+function effectiveLife(){
+  const f = state.form;
+  const base = RULES.usefulLife[f.categoria] || 36;
+  const q = RULES.qualityFactor[f.qualidade]||1;
+  const i = RULES.intensityFactor[f.intensidade]||1;
+  return Math.round(base*q*i*10)/10;
+}
+
+function currentInput(){
+  const f = state.form;
+  const baseValue = parseBRL(f.valorReposicao) || correctedValue();
+  return {
+    category: f.categoria, quality: f.qualidade, intensity: f.intensidade,
+    occupancyPct: f.ocupacao!==''? +f.ocupacao : null,
+    baseValue,
+    acquisitionDate: toDate(f.dataAquisicao),
+    useStartDate: toDate(f.dataInicioUso)||toDate(f.dataAquisicao),
+    refDate: toDate(f.dataReferencia)||new Date(),
+    customUsefulLife: f.vidaUtilCustom? +f.vidaUtilCustom : null,
+    condition: f.condicao,
+    damageType: f.analiseDesgaste,
+    damagePct: f.danoPct? +f.danoPct : null,
+    damageValueManual: f.danoValor? parseBRL(f.danoValor) : null,
+    residualMinPct: f.residualMinPct!==''? +f.residualMinPct : 0,
+    initialLossPct: f.initialLossPct!==''? +f.initialLossPct : 5,
+    needsReplacement: f.precisaReposicao,
+    replacementCosts: { frete:parseBRL(f.frete), montagem:parseBRL(f.montagem), instalacao:parseBRL(f.instalacao), outros:parseBRL(f.outrosCustos) }
+  };
+}
+
+function updateResultPanel(){
+  const r = Engine.compute(currentInput());
+  document.getElementById('rp-value').textContent = brl(r.residual);
+  document.getElementById('bd-uso').textContent = state.form.dataAquisicao ? Engine.humanTime(r.usedMonths) : '—';
+  document.getElementById('bd-vu').textContent = r.adjustedLifeMonths.toFixed(1)+' meses';
+  document.getElementById('bd-meter').style.width = (r.lifeFraction*100).toFixed(1)+'%';
+  document.getElementById('bd-pct').textContent = (r.lifeFraction*100).toFixed(1)+'%';
+  document.getElementById('bd-base').textContent = brl(r.baseValue);
+  document.getElementById('bd-dep').textContent = brl(r.depreciatedValue)+' ('+(r.totalDepPct*100).toFixed(1)+'%)';
+  document.getElementById('bd-dano').textContent = r.damageValue? brl(r.damageValue) : '—';
+  document.getElementById('bd-total').textContent = r.replacementTotal!=null ? brl(r.replacementTotal) : brl(r.residual);
+  document.getElementById('rp-sub').textContent = r.reachedLife ? 'Bem atingiu a vida útil estimada' : 'Valor de referência após depreciação';
+  return r;
+}
+
+function renderMemoria(){
+  const r = updateResultPanel();
+  const f = state.form;
+  const cont = document.getElementById('memoria-container');
+  let flags = '';
+  if(r.reachedLife){
+    flags += `<div class="notice notice-warn"><span>⏳</span><div><b>Bem atingiu a vida útil estimada.</b> O valor calculado representa apenas a referência de depreciação e não significa necessariamente ausência de valor econômico ou funcional.</div></div>`;
+  }
+  if(r.occupancyNote){
+    flags += `<div class="notice notice-info"><span>📊</span><div>${r.occupancyNote}</div></div>`;
+  }
+
+  cont.innerHTML = `
+  <details class="memoria" open>
+    <summary>Memória de cálculo</summary>
+    <ol>
+      <li><b>Valor base utilizado:</b> ${brl(r.baseValue)} ${f.usarCorrecao && !parseBRL(f.valorReposicao) ? '(valor original corrigido monetariamente)' : '(valor de reposição atual)'}.</li>
+      <li><b>Correção monetária:</b> ${f.usarCorrecao ? `aplicada a ${f.indiceAnual}% a.a. sobre o valor original de ${brl(parseBRL(f.valorOriginal))}, resultando em ${brl(correctedValue())} — a correção não representa valorização do bem.` : 'não utilizada — valor de reposição atual informado diretamente.'}</li>
+      <li><b>Vida útil considerada:</b> base de ${r.baseLife} meses para a categoria "${f.categoria}"${f.vidaUtilCustom?' (sobrescrita manualmente)':''}, ajustada pelos fatores de qualidade e intensidade para ${r.adjustedLifeMonths.toFixed(1)} meses.</li>
+      <li><b>Fatores aplicados:</b> qualidade "${f.qualidade}" (×${r.qF}) e intensidade "${f.intensidade}" (×${r.iF}) — produto combinado ×${r.factorProduct.toFixed(2)}.</li>
+      <li><b>Tempo de uso:</b> ${Engine.humanTime(r.usedMonths)} (${r.usedMonths.toFixed(1)} meses), de ${fmtDate(toDate(f.dataInicioUso)||toDate(f.dataAquisicao))} até ${fmtDate(toDate(f.dataReferencia))}.</li>
+      <li><b>Percentual de vida útil consumida:</b> ${(r.lifeFraction*100).toFixed(2)}%.</li>
+      <li><b>Curva de depreciação utilizada:</b> modelo híbrido — Fase 1 (perda inicial de ${(r.initialLoss*100).toFixed(1)}% ao entrar em uso) + Fase 2 (curva progressiva não linear com desaceleração, expoente 0,72 sobre a fração de vida útil consumida).
+        <div class="formula">Valor residual = Valor base × (1 − perda inicial) × (1 − depreciação acumulada)
+Depreciação acumulada = (% vida útil consumida) ^ 0,72 = ${(r.accumulatedDepPct*100).toFixed(2)}%</div>
+      </li>
+      <li><b>Depreciação acumulada:</b> ${(r.totalDepPct*100).toFixed(2)}% → ${brl(r.depreciatedValue)}.</li>
+      <li><b>Valor residual estimado:</b> ${brl(r.residual)}${r.residualMinValue>0?` (respeitando piso mínimo de ${brl(r.residualMinValue)})`:''}.</li>
+      <li><b>Análise de dano:</b> ${r.damageNote}${r.damageValue?` Valor de referência do dano: ${brl(r.damageValue)}.`:''}</li>
+      <li><b>Valor final de referência:</b> ${r.replacementTotal!=null ? `total de reposição ${brl(r.replacementTotal)}, com valor de referência para reembolso de ${brl(r.refundReference)} (após dedução do residual já apurado).` : brl(r.residual)+'.'}</li>
+    </ol>
+  </details>
+  ${flags}
+  ${r.replacementTotal!=null ? `
+  <div class="card" style="margin-top:16px">
+    <h2>Caso de reposição</h2>
+    <div class="tablewrap"><table>
+      <tr><td>Valor de reposição atual</td><td class="mono">${brl(r.baseValue)}</td></tr>
+      <tr><td>Valor residual estimado</td><td class="mono">${brl(r.residual)}</td></tr>
+      <tr><td>Frete</td><td class="mono">${brl(parseBRL(f.frete))}</td></tr>
+      <tr><td>Montagem</td><td class="mono">${brl(parseBRL(f.montagem))}</td></tr>
+      <tr><td>Instalação</td><td class="mono">${brl(parseBRL(f.instalacao))}</td></tr>
+      <tr><td>Outros custos comprovados</td><td class="mono">${brl(parseBRL(f.outrosCustos))}</td></tr>
+      <tr><td><b>Total de reposição</b></td><td class="mono"><b>${brl(r.replacementTotal)}</b></td></tr>
+      <tr><td><b>Valor de referência para reembolso</b></td><td class="mono"><b>${brl(r.refundReference)}</b></td></tr>
+    </table></div>
+  </div>`:''}
+  `;
+}
+
+function attachStepEvents(){
+  const f = state.form;
+  const $ = id=>document.getElementById(id);
+  const bind = (id,key,transform)=>{ const e=$(id); if(e) e.addEventListener('input', ()=>{ f[key]= transform?transform(e.value):e.value; refreshLive(); }); };
+
+  bind('in-unidade','unidade'); bind('in-cat-custom','categoriaCustom'); bind('in-marca','marca');
+  bind('in-descricao','descricao'); bind('in-proprietario','proprietario'); bind('in-responsavel','responsavel');
+  const catEl = $('in-categoria'); if(catEl) catEl.addEventListener('change', e=>{ f.categoria=e.target.value; renderSteps(); });
+
+  bind('in-valor-orig','valorOriginal'); bind('in-data-aq','dataAquisicao'); bind('in-valor-reposicao','valorReposicao');
+  const corEl = $('in-usar-correcao'); if(corEl) corEl.addEventListener('change', e=>{ f.usarCorrecao=e.target.checked; renderSteps(); });
+  bind('in-indice','indiceAnual', v=>+v);
+
+  bind('in-data-aq2','dataAquisicao', v=>{ refreshLive(); return v; });
+  bind('in-inicio-uso','dataInicioUso');
+  bind('in-data-ref','dataReferencia');
+  bind('in-vida-custom','vidaUtilCustom');
+
+  const q=$('chip-qualidade'); if(q) q.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.qualidade=c.dataset.val; renderSteps(); }));
+  const iEl=$('chip-intensidade'); if(iEl) iEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.intensidade=c.dataset.val; renderSteps(); }));
+  bind('in-ocupacao','ocupacao');
+
+  const cEl=$('chip-condicao'); if(cEl) cEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.condicao=c.dataset.val; renderSteps(); }));
+  const dEl=$('chip-desgaste'); if(dEl) dEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.analiseDesgaste=c.dataset.val; renderSteps(); }));
+  bind('in-dano-pct','danoPct'); bind('in-dano-valor','danoValor'); bind('in-dano-valor2','danoValor');
+
+  const repEl=$('in-precisa-reposicao'); if(repEl) repEl.addEventListener('change', e=>{ f.precisaReposicao=e.target.checked; renderSteps(); });
+  bind('in-frete','frete'); bind('in-montagem','montagem'); bind('in-instalacao','instalacao'); bind('in-outros','outrosCustos');
+  bind('in-residual-min','residualMinPct'); bind('in-perda-inicial','initialLossPct');
+
+}
+
+function refreshLive(){ updateResultPanel(); }
+
+/* ------------------------------- TABS ------------------------------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+    if(btn.dataset.view==='historico') renderHistorico();
+    if(btn.dataset.view==='painel') renderPainel();
+    if(btn.dataset.view==='distrato') renderDistratoSelect();
+  });
+});
+
+/* ------------------------------- HISTÓRICO (localStorage) ------------------------------- */
+const History = {
+  KEY:'depr360_history_v1',
+  load(){ try{ return JSON.parse(localStorage.getItem(this.KEY)||'[]'); }catch(e){ return []; } },
+  save(list){ try{ localStorage.setItem(this.KEY, JSON.stringify(list)); }catch(e){} },
+  add(item){ const list=this.load(); list.unshift(item); this.save(list); return list; },
+  updateStatus(id,status){ const list=this.load(); const it=list.find(i=>i.id===id); if(it){ it.status=status; this.save(list); } return list; },
+  remove(id){ const list=this.load().filter(i=>i.id!==id); this.save(list); return list; }
+};
+
+document.getElementById('btn-save').addEventListener('click', ()=>{
+  const f = state.form;
+  const r = Engine.compute(currentInput());
+  const item = {
+    id: uid(),
+    unidade: f.unidade||'—',
+    proprietario: f.proprietario||'',
+    bem: f.descricao || f.categoria,
+    categoria: f.categoria==='Outro'&&f.categoriaCustom? f.categoriaCustom : f.categoria,
+    dataAquisicao: f.dataAquisicao,
+    tempoUsoMeses: round2(r.usedMonths),
+    valorOriginal: parseBRL(f.valorOriginal),
+    valorAtualizado: round2(correctedValue()),
+    valorReposicao: round2(r.baseValue),
+    vidaUtil: round2(r.adjustedLifeMonths),
+    depreciacaoPct: round2(r.totalDepPct*100),
+    valorResidual: round2(r.residual),
+    condicao: f.condicao,
+    dano: r.damageValue? round2(r.damageValue) : 0,
+    valorReferencia: round2(r.replacementTotal!=null? r.refundReference : r.residual),
+    responsavel: f.responsavel||'',
+    data: new Date().toISOString(),
+    status:'Em análise'
+  };
+  History.add(item);
+  alert('Análise salva no histórico como '+item.id+'.');
+});
+
+document.getElementById('btn-print').addEventListener('click', ()=>{ window.print(); });
+
+document.getElementById('btn-copy').addEventListener('click', ()=>{
+  const memoria = document.querySelector('#memoria-container .memoria');
+  if(!memoria){ return; }
+  const text = memoria.innerText;
+  const btn = document.getElementById('btn-copy');
+  const original = btn.textContent;
+  const done = ()=>{ btn.textContent='Copiado ✓'; setTimeout(()=>{ btn.textContent=original; },1600); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>{ done(); });
+  } else { done(); }
+});
+
+function renderHistorico(){
+  const list = History.load();
+  const cont = document.getElementById('hist-table');
+  if(list.length===0){ cont.innerHTML='<div class="empty">Nenhuma análise salva ainda. Salve uma análise na calculadora para começar o histórico.</div>'; return; }
+  cont.innerHTML = `<div class="tablewrap"><table>
+    <thead><tr><th>ID</th><th>Unidade</th><th>Bem</th><th>Categoria</th><th>Valor residual</th><th>Valor referência</th><th>Status</th><th>Data</th><th></th></tr></thead>
+    <tbody>
+    ${list.map(it=>`
+      <tr>
+        <td class="mono">${it.id}</td>
+        <td>${it.unidade}</td>
+        <td>${it.bem}</td>
+        <td>${it.categoria}</td>
+        <td class="mono">${brl(it.valorResidual)}</td>
+        <td class="mono">${brl(it.valorReferencia)}</td>
+        <td>
+          <select class="hist-status small-btn" data-id="${it.id}" style="padding:4px 8px; font-size:11.5px">
+            ${['Em análise','Aprovado','Em negociação','Finalizado'].map(s=>`<option ${s===it.status?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td>${new Date(it.data).toLocaleDateString('pt-BR')}</td>
+        <td><button class="btn btn-outline small-btn hist-del" data-id="${it.id}">Excluir</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table></div>`;
+  cont.querySelectorAll('.hist-status').forEach(sel=>sel.addEventListener('change', e=>{ History.updateStatus(e.target.dataset.id, e.target.value); }));
+  cont.querySelectorAll('.hist-del').forEach(btn=>btn.addEventListener('click', e=>{ if(confirm('Excluir esta análise do histórico?')){ History.remove(e.target.dataset.id); renderHistorico(); renderPainel(); } }));
+}
+
+/* ------------------------------- DISTRATO ------------------------------- */
+function renderDistratoSelect(){
+  const list = History.load();
+  const sel = document.getElementById('distrato-select');
+  const filterUnit = document.getElementById('distrato-unidade');
+  const filtered = list.filter(it => !filterUnit.value || it.unidade.toLowerCase().includes(filterUnit.value.toLowerCase()));
+  sel.innerHTML = filtered.length ? filtered.map(it=>`<option value="${it.id}">${it.unidade} — ${it.bem} — ${brl(it.valorReferencia)}</option>`).join('') : '<option disabled>Nenhuma análise salva</option>';
+  filterUnit.oninput = renderDistratoSelect;
+}
+document.getElementById('btn-consolidar')?.addEventListener('click', ()=>{
+  const sel = document.getElementById('distrato-select');
+  const ids = Array.from(sel.selectedOptions).map(o=>o.value);
+  const list = History.load().filter(it=>ids.includes(it.id));
+  const cont = document.getElementById('distrato-result');
+  if(list.length===0){ cont.innerHTML = '<div class="empty">Selecione ao menos uma análise para consolidar.</div>'; return; }
+  const total = list.reduce((s,it)=>s+it.valorReferencia,0);
+  cont.innerHTML = `
+  <div class="card">
+    <h2>Tabela consolidada de distrato</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Unidade</th><th>Bem</th><th>Categoria</th><th>Aquisição</th><th>Uso (meses)</th><th>V. original</th><th>V. atualizado</th><th>V. reposição</th><th>Vida útil</th><th>Deprec.</th><th>V. residual</th><th>Condição</th><th>Dano</th><th>V. referência</th></tr></thead>
+      <tbody>
+      ${list.map(it=>`<tr>
+        <td>${it.unidade}</td><td>${it.bem}</td><td>${it.categoria}</td>
+        <td>${it.dataAquisicao? fmtDate(toDate(it.dataAquisicao)):'—'}</td>
+        <td class="mono">${it.tempoUsoMeses}</td>
+        <td class="mono">${brl(it.valorOriginal)}</td><td class="mono">${brl(it.valorAtualizado)}</td>
+        <td class="mono">${brl(it.valorReposicao)}</td><td class="mono">${it.vidaUtil}m</td>
+        <td class="mono">${it.depreciacaoPct}%</td><td class="mono">${brl(it.valorResidual)}</td>
+        <td>${it.condicao}</td><td class="mono">${brl(it.dano)}</td><td class="mono">${brl(it.valorReferencia)}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <div class="result-card" style="margin-top:16px">
+      <div class="eyebrow">Valor total de referência</div>
+      <div class="value mono">${brl(total)}</div>
+      <div class="sub">${list.length} bem(ns) consolidado(s) — estimativa técnica, não constitui título de cobrança automática.</div>
+    </div>
+  </div>`;
+});
+
+/* ------------------------------- PAINEL / DASHBOARD ------------------------------- */
+function renderPainel(){
+  const list = History.load();
+  const kpi = document.getElementById('kpi-grid');
+  const totalReposicao = list.reduce((s,i)=>s+i.valorReposicao,0);
+  const totalResidual = list.reduce((s,i)=>s+i.valorResidual,0);
+  const depMedia = list.length? list.reduce((s,i)=>s+i.depreciacaoPct,0)/list.length : 0;
+  const proximosFim = list.filter(i=> i.vidaUtil>0 && (i.tempoUsoMeses/i.vidaUtil)>=0.85).length;
+  const comDano = list.filter(i=>i.dano>0).length;
+  const emNegociacao = list.filter(i=>i.status==='Em negociação').length;
+
+  kpi.innerHTML = `
+    <div class="kpi"><div class="k-label">Bens cadastrados</div><div class="k-val mono">${list.length}</div></div>
+    <div class="kpi"><div class="k-label">Valor total de reposição</div><div class="k-val mono">${brl(totalReposicao)}</div></div>
+    <div class="kpi"><div class="k-label">Valor residual total</div><div class="k-val mono">${brl(totalResidual)}</div></div>
+    <div class="kpi"><div class="k-label">Depreciação média</div><div class="k-val mono">${depMedia.toFixed(1)}%</div></div>
+    <div class="kpi"><div class="k-label">Próximos do fim da vida útil</div><div class="k-val mono">${proximosFim}</div></div>
+    <div class="kpi"><div class="k-label">Com dano extraordinário</div><div class="k-val mono">${comDano}</div></div>
+    <div class="kpi"><div class="k-label">Em negociação (distrato)</div><div class="k-val mono">${emNegociacao}</div></div>
+    <div class="kpi"><div class="k-label">Análises "em análise"</div><div class="k-val mono">${list.filter(i=>i.status==='Em análise').length}</div></div>
+  `;
+  drawBars(list); drawCategoryDep(list); drawCondition(list); drawLifeRemaining(list);
+}
+
+function getCSS(varName){ return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
+
+function setupCanvas(canvas){
+  const ratio = window.devicePixelRatio||1;
+  const w = canvas.clientWidth || canvas.width, h = canvas.height;
+  canvas.width = w*ratio; canvas.height = h*ratio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(ratio,ratio);
+  return {ctx, w, h};
+}
+
+function drawBars(list){
+  const canvas = document.getElementById('chart-bars');
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const ink = getCSS('--ink-soft'), primary=getCSS('--primary'), accent=getCSS('--accent'), line=getCSS('--line');
+  ctx.font='11px Inter'; ctx.fillStyle=ink;
+  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
+  const items = list.slice(0,8);
+  const max = Math.max(...items.map(i=>i.valorReposicao),1);
+  const padL=10, padB=34, padT=14, barGroupW=(w-padL-10)/items.length;
+  // axis
+  ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(padL,h-padB); ctx.lineTo(w-6,h-padB); ctx.stroke();
+  items.forEach((it,i)=>{
+    const x = padL + i*barGroupW + 8;
+    const bw = (barGroupW-24)/2;
+    const hRep = (it.valorReposicao/max)*(h-padB-padT);
+    const hRes = (it.valorResidual/max)*(h-padB-padT);
+    ctx.fillStyle=primary; ctx.fillRect(x, h-padB-hRep, bw, hRep);
+    ctx.fillStyle=accent; ctx.fillRect(x+bw+4, h-padB-hRes, bw, hRes);
+    ctx.fillStyle=ink; ctx.save(); ctx.font='9.5px Inter';
+    const label = (it.bem||'').slice(0,8);
+    ctx.fillText(label, x-2, h-padB+14);
+    ctx.restore();
+  });
+  document.querySelector('#view-painel .chart-card:nth-child(1) .legend')?.remove();
+  const legend = document.createElement('div'); legend.className='legend';
+  legend.innerHTML = `<span><span class="sw" style="background:${primary}"></span>Valor de reposição</span><span><span class="sw" style="background:${accent}"></span>Valor residual</span>`;
+  canvas.parentElement.appendChild(legend);
+}
+
+function drawCategoryDep(list){
+  const canvas = document.getElementById('chart-cat');
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const ink = getCSS('--ink-soft'), primary=getCSS('--primary'), line=getCSS('--line');
+  ctx.font='11px Inter'; ctx.fillStyle=ink;
+  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
+  const byCategory = {};
+  list.forEach(i=>{ (byCategory[i.categoria]=byCategory[i.categoria]||[]).push(i.depreciacaoPct); });
+  const cats = Object.keys(byCategory).slice(0,8);
+  const avgs = cats.map(c=>byCategory[c].reduce((a,b)=>a+b,0)/byCategory[c].length);
+  const padL=10, padB=34, padT=14, barW=(w-padL-10)/cats.length;
+  ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(padL,h-padB); ctx.lineTo(w-6,h-padB); ctx.stroke();
+  cats.forEach((c,i)=>{
+    const x = padL + i*barW + 6;
+    const bh = (avgs[i]/100)*(h-padB-padT);
+    ctx.fillStyle = primary; ctx.fillRect(x, h-padB-bh, barW-12, bh);
+    ctx.fillStyle = ink; ctx.font='9px Inter';
+    ctx.fillText(c.slice(0,7), x-2, h-padB+13);
+    ctx.font='10px JetBrains Mono, monospace'; ctx.fillStyle=getCSS('--ink');
+    ctx.fillText(avgs[i].toFixed(0)+'%', x, h-padB-bh-4);
+  });
+}
+
+function drawCondition(list){
+  const canvas = document.getElementById('chart-cond');
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const ink = getCSS('--ink-soft');
+  ctx.font='11px Inter'; ctx.fillStyle=ink;
+  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
+  const colors = {'Excelente':getCSS('--good'),'Bom':getCSS('--primary'),'Regular':getCSS('--warn'),'Ruim':getCSS('--accent'),'Danificado':getCSS('--bad')};
+  const counts = {};
+  list.forEach(i=>{ counts[i.condicao]=(counts[i.condicao]||0)+1; });
+  const entries = Object.entries(counts);
+  const total = list.length;
+  const cx=w*0.32, cy=h/2, r=Math.min(w*0.28,h*0.38);
+  let start=-Math.PI/2;
+  entries.forEach(([label,count])=>{
+    const angle = (count/total)*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+angle); ctx.closePath();
+    ctx.fillStyle = colors[label]||getCSS('--ink-soft'); ctx.fill();
+    start += angle;
+  });
+  let ly = 20;
+  entries.forEach(([label,count])=>{
+    ctx.fillStyle = colors[label]||getCSS('--ink-soft');
+    ctx.fillRect(w*0.62, ly, 10, 10);
+    ctx.fillStyle = getCSS('--ink'); ctx.font='11px Inter';
+    ctx.fillText(`${label} (${count})`, w*0.62+16, ly+9);
+    ly += 20;
+  });
+}
+
+function drawLifeRemaining(list){
+  const canvas = document.getElementById('chart-vu');
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const ink = getCSS('--ink-soft'), primary=getCSS('--primary'), warn=getCSS('--warn'), bad=getCSS('--bad'), good=getCSS('--good'), line=getCSS('--line');
+  ctx.font='11px Inter'; ctx.fillStyle=ink;
+  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
+  const bands = [
+    {label:'0–25%', color:good, test:f=>f<=0.25},
+    {label:'26–50%', color:primary, test:f=>f>0.25&&f<=0.5},
+    {label:'51–75%', color:warn, test:f=>f>0.5&&f<=0.75},
+    {label:'76–100%', color:bad, test:f=>f>0.75}
+  ];
+  const counts = bands.map(b=>list.filter(i=>{ const f = i.vidaUtil? i.tempoUsoMeses/i.vidaUtil : 0; return b.test(Math.min(1,f)); }).length);
+  const max = Math.max(...counts,1);
+  const padL=10, padB=34, padT=14, barW=(w-padL-10)/bands.length;
+  ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(padL,h-padB); ctx.lineTo(w-6,h-padB); ctx.stroke();
+  bands.forEach((b,i)=>{
+    const x = padL + i*barW + 10;
+    const bh = (counts[i]/max)*(h-padB-padT);
+    ctx.fillStyle = b.color; ctx.fillRect(x, h-padB-bh, barW-20, bh);
+    ctx.fillStyle = ink; ctx.font='10px Inter';
+    ctx.fillText(b.label, x-2, h-padB+14);
+    ctx.fillStyle=getCSS('--ink'); ctx.font='10px JetBrains Mono, monospace';
+    ctx.fillText(String(counts[i]), x+(barW-20)/2-4, h-padB-bh-4);
+  });
+}
+
+/* ------------------------------- INIT ------------------------------- */
+renderSteps();
+window.addEventListener('resize', ()=>{ const vp=document.getElementById('view-painel'); if(vp && vp.classList.contains('active')) renderPainel(); });
+</script>
