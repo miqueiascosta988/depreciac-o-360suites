@@ -148,6 +148,14 @@ input,select,textarea{
   border:1px solid var(--line); background:var(--bg); color:var(--ink); width:100%;
 }
 input:focus,select:focus,textarea:focus{outline:2px solid var(--primary); outline-offset:1px}
+.item-row{border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:12px; position:relative; background:var(--bg)}
+.item-row .item-num{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); margin-bottom:10px}
+.item-remove{
+  position:absolute; top:12px; right:12px; border:1px solid var(--line); background:var(--surface);
+  color:var(--ink-soft); width:24px; height:24px; border-radius:50%; font-size:15px; line-height:1;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;
+}
+.item-remove:hover{background:var(--bad-soft); color:var(--bad); border-color:var(--bad)}
 .chiprow{display:flex; gap:8px; flex-wrap:wrap}
 .chip{
   border:1px solid var(--line); background:var(--surface); padding:8px 13px; border-radius:999px;
@@ -301,8 +309,7 @@ select[multiple]{height:110px}
    5. CÁLCULO de valor residual               -> Engine.compute()
    6. ANÁLISE de dano                          -> Engine.damage()
    7. RELATÓRIO (impressão)                    -> window.print via btn-print
-   8. HISTÓRICO (localStorage)                  -> History.*
-   9. DASHBOARD                                 -> renderPainel()
+   8. ITENS MÚLTIPLOS                            -> state.form.itens[], computeItem()/computeAll()
    A 360Suites pode alterar vidas úteis, fatores, curva, perda inicial,
    residual mínimo e regras de ocupação apenas editando o objeto RULES abaixo.
    ========================================================================= */
@@ -538,25 +545,22 @@ const CATEGORY_GROUPS = {
   'Cozinha e utensílios': ['Panela','Louça/Utensílio de mesa','Utensílio doméstico'],
   'Outro': ['Outro']
 };
-// Rótulos em linguagem simples para o proprietário — mapeiam para as mesmas chaves de
-// RULES.intensityFactor usadas no cálculo, sem exigir que ele saiba a taxa de ocupação (%)
-// ou o termo técnico "intensidade de uso".
-const INTENSITY_LABELS = [
-  { key:'Baixa', label:'Poucas locações (unidade fica ociosa boa parte do tempo)' },
-  { key:'Normal', label:'Uso regular (locações frequentes, com intervalos normais)' },
-  { key:'Alta', label:'Alta procura (giro constante de hóspedes)' },
-  { key:'Muito alta', label:'Ocupação quase o ano todo (poucos dias vagos)' }
-];
+// Qualidade e intensidade de uso são padronizadas (sem variação) para todos os itens e todas as
+// análises: qualidade "Padrão" (fator ×1,00) e "Uso regular" (fator ×1,00) — já refletem o padrão
+// médio de operação da 360Suites, sem necessidade de escolha manual.
+const FIXED_QUALITY = 'Padrão';
+const FIXED_INTENSITY = 'Normal';
+function uidItem(){ return 'it-'+Math.random().toString(36).slice(2,9); }
+function novoItem(){ return { id: uidItem(), categoria:'Cadeira', categoriaCustom:'', marca:'', descricao:'', valorOriginal:'' }; }
 const state = {
   step: 0,
   form: {
-    unidade:'', categoria:'Cadeira', categoriaCustom:'', descricao:'', marca:'',
-    valorOriginal:'', dataAquisicao:'', valorReposicao:'',
-    usarCorrecao:false, indiceAnual:6,
+    unidade:'',
+    itens: [ novoItem() ],
+    dataAquisicao:'',
     dataInicioUso:'', dataReferencia: new Date().toISOString().slice(0,10),
-    vidaUtilCustom:'', qualidade:'Padrão', intensidade:'Normal',
+    vidaUtilCustom:'',
     condicao:'Bom', analiseDesgaste:'sim', danoPct:'', danoValor:'',
-    precisaReposicao:false, frete:'', montagem:'', instalacao:'', outrosCustos:'',
     residualMinPct:0, initialLossPct:5, responsavel:'', proprietario:''
   }
 };
@@ -569,70 +573,43 @@ function renderSteps(){
 
   {
     html += `
-    <div class="section-eyebrow"><div class="num">1</div><div class="lbl">Identificação do bem</div></div>
+    <div class="section-eyebrow"><div class="num">1</div><div class="lbl">Identificação dos bens</div></div>
     <div class="card">
+      <p class="hint">Atuamos com devolução/reembolso de múltiplos itens em uma mesma análise. Adicione um item para cada bem envolvido — o valor de referência final soma o resultado de todos.</p>
+      <div id="itens-list">
+        ${f.itens.map((it,idx)=>itemRowHtml(it,idx,f.itens.length>1)).join('')}
+      </div>
+      <button type="button" class="btn btn-outline" id="btn-add-item" style="width:100%; margin-top:4px">+ Adicionar outro item</button>
+      <div class="notice notice-info" style="margin-top:14px"><span>💡</span><div><b>Como chegamos ao valor de hoje:</b> aplicamos a correção monetária oficial (${RULES.defaultAnnualIndex}% a.a.) sobre o valor pago de cada item para estimar o custo de reposição atual — isso apenas atualiza o preço para hoje, sem representar ganho ou perda real do bem. É a partir desse valor atualizado que a depreciação pelo uso é calculada na próxima etapa.</div></div>
+    </div>`;
+  }
+
+  {
+    html += `
+    <div class="section-eyebrow"><div class="num">2</div><div class="lbl">Tempo de uso e vida útil</div></div>
+    <div class="card">
+      <p class="hint">Aplicado a todos os itens desta análise. Nunca arredondamos período parcial para ano completo.</p>
       <div class="grid2">
-        <div class="field">
-          <label for="in-categoria">Categoria do bem</label>
-          <select id="in-categoria">
-            ${Object.entries(CATEGORY_GROUPS).map(([group, items])=>`
-            <optgroup label="${group}">
-              ${items.map(c=>`<option value="${c}" ${c===f.categoria?'selected':''}>${c}</option>`).join('')}
-            </optgroup>`).join('')}
-          </select>
-        </div>
-        <div class="field">
-          <label for="in-marca">Marca/modelo <span class="tip">(opcional)</span></label>
-          <input id="in-marca" placeholder="Ex.: Tok&Stok — mod. Eames" value="${f.marca}">
-        </div>
-      </div>
-      ${f.categoria==='Outro' ? `
-      <div class="field" style="margin-top:14px">
-        <label for="in-cat-custom">Categoria personalizada</label>
-        <input id="in-cat-custom" placeholder="Descreva a categoria" value="${f.categoriaCustom}">
-      </div>` : ''}
-      ${f.categoria==='Enxoval' ? `<div class="notice notice-info" style="margin-top:14px"><span>🧺</span><div><b>Enxoval é um kit de itens com desgastes diferentes entre si.</b> Sempre que possível, valide peça por peça (Lençol, Toalha, Edredom, Travesseiro etc.) — cada uma tem vida útil própria. Use "Enxoval" apenas para um conjunto adquirido e substituído sempre em bloco, na mesma data.</div></div>` : ''}
-      <div class="field" style="margin-top:14px">
-        <label for="in-descricao">Descrição do bem/item</label>
-        <textarea id="in-descricao" rows="2" placeholder="Ex.: Conjunto com 2 cadeiras de jantar">${f.descricao}</textarea>
-      </div>
-      <div class="grid2" style="margin-top:14px">
         <div class="field">
           <label for="in-data-aq">Data de aquisição</label>
           <input type="date" id="in-data-aq" value="${f.dataAquisicao}">
         </div>
         <div class="field">
-          <label for="in-valor-orig">Valor pago originalmente</label>
-          <input id="in-valor-orig" placeholder="R$ 0,00" value="${f.valorOriginal}">
-        </div>
-      </div>
-      <div class="notice notice-info" style="margin-top:14px"><span>💡</span><div><b>Como chegamos ao valor de hoje:</b> aplicamos a correção monetária oficial (${RULES.defaultAnnualIndex}% a.a.) sobre o valor pago para estimar o custo de reposição atual — isso apenas atualiza o preço para hoje, sem representar ganho ou perda real do bem. É a partir desse valor atualizado que a depreciação pelo uso é calculada na próxima etapa.</div></div>
-    </div>`;
-  }
-
-  {
-    const life = effectiveLife();
-    html += `
-    <div class="section-eyebrow"><div class="num">2</div><div class="lbl">Tempo de uso e vida útil</div></div>
-    <div class="card">
-      <p class="hint">Nunca arredondamos período parcial para ano completo.</p>
-      <div class="grid2">
-        <div class="field">
           <label for="in-inicio-uso">Data de início de utilização <span class="tip">(opcional — se diferente da aquisição)</span></label>
           <input type="date" id="in-inicio-uso" value="${f.dataInicioUso}">
         </div>
-        <div class="field">
-          <label for="in-data-ref">Data de referência <span class="tip">(hoje, por padrão)</span></label>
-          <input type="date" id="in-data-ref" value="${f.dataReferencia}">
-        </div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label for="in-data-ref">Data de referência <span class="tip">(hoje, por padrão)</span></label>
+        <input type="date" id="in-data-ref" value="${f.dataReferencia}">
       </div>
       <div class="breakdown" style="margin-top:16px">
         <div class="bd-row"><span class="k">Tempo efetivo de uso</span><span class="v" id="time-human">—</span></div>
-        <div class="bd-row"><span class="k">Vida útil padrão da categoria</span><span class="v mono" id="time-base-life">${RULES.usefulLife[f.categoria]||36} meses</span></div>
+        ${f.itens.map(it=>`<div class="bd-row"><span class="k">Vida útil padrão — ${it.categoria==='Outro'&&it.categoriaCustom?it.categoriaCustom:it.categoria}</span><span class="v mono">${RULES.usefulLife[it.categoria]||36} meses</span></div>`).join('')}
       </div>
       <div class="field" style="margin-top:14px">
-        <label for="in-vida-custom">Vida útil manual (meses) <span class="tip">— opcional, sobrescreve a tabela padrão</span></label>
-        <input type="number" id="in-vida-custom" placeholder="Deixe em branco para usar o padrão" value="${f.vidaUtilCustom}">
+        <label for="in-vida-custom">Vida útil manual (meses) <span class="tip">— opcional, sobrescreve a tabela padrão para todos os itens</span></label>
+        <input type="number" id="in-vida-custom" placeholder="Deixe em branco para usar o padrão de cada categoria" value="${f.vidaUtilCustom}">
       </div>
       <div class="notice notice-info" style="margin-top:14px"><span>📋</span><div><b>Tabela de vida útil configurável.</b> Os valores acima são padrões da 360Suites para estimativa de reposição — não representam regra contábil ou fiscal.</div></div>
     </div>`;
@@ -642,20 +619,8 @@ function renderSteps(){
     html += `
     <div class="section-eyebrow"><div class="num">3</div><div class="lbl">Qualidade e intensidade de uso</div></div>
     <div class="card">
-      <p class="hint">Esses fatores ajustam a vida útil esperada do bem.</p>
-      <div class="field">
-        <label>Qualidade do bem</label>
-        <div class="chiprow" id="chip-qualidade">
-          ${Object.keys(RULES.qualityFactor).map(q=>`<button class="chip ${q===f.qualidade?'sel':''}" data-val="${q}">${q} <span class="mono" style="opacity:.7">×${RULES.qualityFactor[q]}</span></button>`).join('')}
-        </div>
-      </div>
-      <div class="field" style="margin-top:16px">
-        <label>Como você descreveria a procura pela unidade?</label>
-        <div class="chiprow" id="chip-intensidade">
-          ${INTENSITY_LABELS.map(i=>`<button class="chip ${i.key===f.intensidade?'sel':''}" data-val="${i.key}">${i.label}</button>`).join('')}
-        </div>
-        <p class="hint" style="margin-top:8px">Não é preciso saber a taxa de ocupação exata — escolha a opção que melhor descreve o dia a dia da unidade. Na dúvida, mantenha "Uso regular".</p>
-      </div>
+      <p class="hint">Padronizado para todos os itens desta análise.</p>
+      <div class="notice notice-info"><span>✅</span><div><b>Qualidade Padrão</b> e <b>Uso regular</b> (locações frequentes, com intervalos normais) já estão considerados no cálculo de todos os itens — sem ajuste adicional sobre a vida útil das categorias.</div></div>
     </div>`;
   }
 
@@ -675,9 +640,9 @@ function renderSteps(){
     <div class="card">
       ${f.condicao==='Ausente'?`
       <div class="notice notice-warn"><span>📦</span><div><b>Item ausente (não localizado na vistoria).</b> Como não é possível observar o desgaste de um item que não está na unidade, ele é tratado como dano extraordinário — o valor de referência considera a última condição registrada em vistoria anterior (ou "Bom", como padrão conservador quando não há registro) e desconta a depreciação já consumida pelo tempo em que o item esteve na unidade. Nunca se cobra o valor de um bem novo.</div></div>
-      <div class="field"><label for="in-dano-valor2">Valor manual de referência (opcional — sobrescreve o cálculo automático)</label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
+      <div class="field"><label for="in-dano-valor2">Valor manual de referência total <span class="tip">(opcional — sobrescreve a soma automática de todos os itens)</span></label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
       `:`
-      <p class="hint">O estado atual do bem é compatível com o desgaste esperado pelo tempo e intensidade de uso?</p>
+      <p class="hint">O estado atual do bem é compatível com o desgaste esperado pelo tempo e intensidade de uso? Aplicado igualmente a todos os itens desta análise.</p>
       <div class="chiprow" id="chip-desgaste">
         <button class="chip ${f.analiseDesgaste==='sim'?'sel':''}" data-val="sim">Sim — desgaste natural</button>
         <button class="chip ${f.analiseDesgaste==='parcial'?'sel':''}" data-val="parcial">Parcialmente — acima do esperado</button>
@@ -686,11 +651,11 @@ function renderSteps(){
       ${f.analiseDesgaste==='parcial'?`
       <div class="grid2" style="margin-top:14px">
         <div class="field"><label for="in-dano-pct">Percentual estimado de dano (%)</label><input type="number" id="in-dano-pct" value="${f.danoPct}"></div>
-        <div class="field"><label for="in-dano-valor">Ou valor estimado do dano</label><input id="in-dano-valor" placeholder="R$ 0,00" value="${f.danoValor}"></div>
+        <div class="field"><label for="in-dano-valor">Ou valor estimado do dano total <span class="tip">(todos os itens)</span></label><input id="in-dano-valor" placeholder="R$ 0,00" value="${f.danoValor}"></div>
       </div>`:''}
       ${f.analiseDesgaste==='extraordinario'?`
       <div class="notice notice-warn"><span>⚠️</span><div><b>Dano extraordinário não é automaticamente cobrado pelo valor de um bem novo.</b> O cálculo preserva o valor já consumido pelo uso, usando a depreciação correspondente ao tempo de utilização.</div></div>
-      <div class="field"><label for="in-dano-valor2">Valor manual do dano (opcional — sobrescreve o cálculo automático)</label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
+      <div class="field"><label for="in-dano-valor2">Valor manual de referência total <span class="tip">(opcional — sobrescreve a soma automática de todos os itens)</span></label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
       `:''}
       `}
     </div>`;
@@ -700,16 +665,17 @@ function renderSteps(){
     html += `
     <div class="section-eyebrow"><div class="num">6</div><div class="lbl">Evolução do valor ao longo do tempo</div></div>
     <div class="card">
-      <p class="hint">A curva mostra como o valor do bem cai de forma mais acentuada no início do uso e desacelera com o tempo, até se aproximar do fim da vida útil.</p>
+      <p class="hint">A curva mostra a soma do valor estimado de todos os itens, caindo de forma mais acentuada no início do uso e desacelerando com o tempo.</p>
       <div class="kpi-grid" style="margin-bottom:16px">
         <div class="kpi"><div class="k-label">Depreciação acumulada</div><div class="k-val mono" id="kpi-dep">—</div></div>
         <div class="kpi"><div class="k-label">Perda média por mês</div><div class="k-val mono" id="kpi-perda-mes">—</div></div>
-        <div class="kpi"><div class="k-label">Vida útil efetiva</div><div class="k-val mono" id="kpi-vu-efetiva">—</div></div>
-        <div class="kpi"><div class="k-label">Vida útil restante</div><div class="k-val mono" id="kpi-vu-restante">—</div></div>
+        <div class="kpi"><div class="k-label">Vida útil média (ponderada)</div><div class="k-val mono" id="kpi-vu-efetiva">—</div></div>
+        <div class="kpi"><div class="k-label">Vida útil restante (média)</div><div class="k-val mono" id="kpi-vu-restante">—</div></div>
       </div>
       <canvas id="chart-curve" width="640" height="260" style="width:100%; height:auto"></canvas>
       <div class="legend" id="chart-curve-legend"></div>
     </div>
+    <div id="itens-breakdown-container"></div>
     <div id="memoria-container"></div>
     `;
   }
@@ -720,28 +686,61 @@ function renderSteps(){
   renderMemoria();
 }
 
-function correctedValue(){
+/* Card de um item na Seção 1 (Identificação dos bens) */
+function itemRowHtml(it, idx, canRemove){
+  return `
+  <div class="item-row" data-item-id="${it.id}">
+    ${canRemove?`<button type="button" class="item-remove" data-id="${it.id}" title="Remover este item">×</button>`:''}
+    <div class="item-num">Item ${idx+1}</div>
+    <div class="grid2">
+      <div class="field">
+        <label for="in-categoria-${it.id}">Categoria do bem</label>
+        <select id="in-categoria-${it.id}" data-id="${it.id}" class="in-categoria">
+          ${Object.entries(CATEGORY_GROUPS).map(([group, items])=>`
+          <optgroup label="${group}">
+            ${items.map(c=>`<option value="${c}" ${c===it.categoria?'selected':''}>${c}</option>`).join('')}
+          </optgroup>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label for="in-marca-${it.id}">Marca/modelo <span class="tip">(opcional)</span></label>
+        <input id="in-marca-${it.id}" data-id="${it.id}" class="in-marca" placeholder="Ex.: Tok&amp;Stok — mod. Eames" value="${it.marca}">
+      </div>
+    </div>
+    ${it.categoria==='Outro' ? `
+    <div class="field" style="margin-top:14px">
+      <label for="in-cat-custom-${it.id}">Categoria personalizada</label>
+      <input id="in-cat-custom-${it.id}" data-id="${it.id}" class="in-cat-custom" placeholder="Descreva a categoria" value="${it.categoriaCustom}">
+    </div>` : ''}
+    ${it.categoria==='Enxoval' ? `<div class="notice notice-info" style="margin-top:14px"><span>🧺</span><div><b>Enxoval é um kit de itens com desgastes diferentes entre si.</b> Sempre que possível, cadastre peça por peça (Lençol, Toalha, Edredom, Travesseiro etc.) como itens separados — cada uma tem vida útil própria.</div></div>` : ''}
+    <div class="field" style="margin-top:14px">
+      <label for="in-descricao-${it.id}">Descrição do bem/item <span class="tip">(opcional)</span></label>
+      <input id="in-descricao-${it.id}" data-id="${it.id}" class="in-descricao" placeholder="Ex.: Conjunto com 2 cadeiras de jantar" value="${it.descricao}">
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label for="in-valor-orig-${it.id}">Valor pago originalmente</label>
+      <input id="in-valor-orig-${it.id}" data-id="${it.id}" class="in-valor-orig" placeholder="R$ 0,00" value="${it.valorOriginal}">
+    </div>
+  </div>`;
+}
+
+/* Valor corrigido monetariamente de um item específico, a partir das datas compartilhadas */
+function correctedValueFor(it){
   const f = state.form;
-  const orig = parseBRL(f.valorOriginal);
+  const orig = parseBRL(it.valorOriginal);
   if(!f.dataAquisicao) return orig;
   const years = Engine.monthsBetween(toDate(f.dataAquisicao), toDate(f.dataReferencia))/12;
   const idx = RULES.defaultAnnualIndex/100;
   return orig * Math.pow(1+idx, years);
 }
 
-function effectiveLife(){
+/* Calcula o resultado de depreciação de um item específico, usando as datas, condição e análise
+   de desgaste compartilhadas por toda a análise — apenas categoria e valor pago variam por item. */
+function computeItem(it){
   const f = state.form;
-  const base = RULES.usefulLife[f.categoria] || 36;
-  const q = RULES.qualityFactor[f.qualidade]||1;
-  const i = RULES.intensityFactor[f.intensidade]||1;
-  return Math.round(base*q*i*10)/10;
-}
-
-function currentInput(){
-  const f = state.form;
-  const baseValue = correctedValue();
-  return {
-    category: f.categoria, quality: f.qualidade, intensity: f.intensidade,
+  const baseValue = correctedValueFor(it);
+  const input = {
+    category: it.categoria, quality: FIXED_QUALITY, intensity: FIXED_INTENSITY,
     occupancyPct: null,
     baseValue,
     acquisitionDate: toDate(f.dataAquisicao),
@@ -751,34 +750,63 @@ function currentInput(){
     condition: f.condicao,
     damageType: f.analiseDesgaste,
     damagePct: f.danoPct? +f.danoPct : null,
-    damageValueManual: f.danoValor? parseBRL(f.danoValor) : null,
+    damageValueManual: null, // override manual é aplicado uma única vez, no total da análise
     residualMinPct: RULES.residualMinDefault*100,
     initialLossPct: RULES.initialLossDefault*100,
     needsReplacement: false,
     replacementCosts: { frete:0, montagem:0, instalacao:0, outros:0 }
   };
+  return { item: it, r: Engine.compute(input) };
+}
+
+/* Agrega o resultado de todos os itens da análise em um único total de referência */
+function computeAll(){
+  const f = state.form;
+  const rows = f.itens.map(computeItem);
+  const baseValueTotal = rows.reduce((s,x)=>s+x.r.baseValue,0);
+  const depreciatedValueTotal = rows.reduce((s,x)=>s+x.r.depreciatedValue,0);
+  const residualTotal = rows.reduce((s,x)=>s+x.r.residual,0);
+  const damageValueAutoTotal = rows.reduce((s,x)=>s+(x.r.damageValue||0),0);
+  const manualOverride = f.danoValor!==''&&f.danoValor!=null ? parseBRL(f.danoValor) : null;
+  const damageValueTotal = manualOverride!=null ? manualOverride : damageValueAutoTotal;
+  const referenceValueTotal = damageValueTotal ? damageValueTotal : residualTotal;
+  const usedMonths = rows.length? rows[0].r.usedMonths : 0; // datas compartilhadas -> igual para todos
+  const totalDepPct = baseValueTotal>0 ? depreciatedValueTotal/baseValueTotal : 0;
+  const reachedLife = rows.length>0 && rows.every(x=>x.r.reachedLife);
+  const adjustedLifeWeighted = baseValueTotal>0
+    ? rows.reduce((s,x)=>s+x.r.adjustedLifeMonths*x.r.baseValue,0)/baseValueTotal
+    : (rows[0]? rows[0].r.adjustedLifeMonths : 0);
+  const lifeFraction = adjustedLifeWeighted>0 ? Math.min(1, usedMonths/adjustedLifeWeighted) : 0;
+  return {
+    rows, baseValueTotal, depreciatedValueTotal, residualTotal,
+    damageValueTotal, damageValueAutoTotal, referenceValueTotal, usedMonths, totalDepPct, reachedLife,
+    adjustedLifeWeighted, lifeFraction, manualOverride,
+    damageNote: rows[0] ? rows[0].r.damageNote : '',
+    initialLoss: rows[0] ? rows[0].r.initialLoss : RULES.initialLossDefault,
+    accumulatedDepPct: rows[0] ? rows[0].r.accumulatedDepPct : 0
+  };
 }
 
 function updateResultPanel(){
-  const r = Engine.compute(currentInput());
-  document.getElementById('rp-value').textContent = brl(r.residual);
+  const r = computeAll();
+  document.getElementById('rp-value').textContent = brl(r.residualTotal);
   document.getElementById('bd-uso').textContent = state.form.dataAquisicao ? Engine.humanTime(r.usedMonths) : '—';
-  document.getElementById('bd-vu').textContent = r.adjustedLifeMonths.toFixed(1)+' meses';
+  document.getElementById('bd-vu').textContent = r.adjustedLifeWeighted.toFixed(1)+' meses';
   document.getElementById('bd-meter').style.width = (r.lifeFraction*100).toFixed(1)+'%';
   document.getElementById('bd-pct').textContent = (r.lifeFraction*100).toFixed(1)+'%';
-  document.getElementById('bd-base').textContent = brl(r.baseValue);
-  document.getElementById('bd-dep').textContent = brl(r.depreciatedValue)+' ('+(r.totalDepPct*100).toFixed(1)+'%)';
-  document.getElementById('bd-dano').textContent = r.damageValue? brl(r.damageValue) : '—';
-  document.getElementById('bd-total').textContent = brl(r.referenceValue);
-  document.getElementById('rp-sub').textContent = r.reachedLife ? 'Bem atingiu a vida útil estimada' : 'Valor de referência após depreciação';
+  document.getElementById('bd-base').textContent = brl(r.baseValueTotal);
+  document.getElementById('bd-dep').textContent = brl(r.depreciatedValueTotal)+' ('+(r.totalDepPct*100).toFixed(1)+'%)';
+  document.getElementById('bd-dano').textContent = r.damageValueTotal? brl(r.damageValueTotal) : '—';
+  document.getElementById('bd-total').textContent = brl(r.referenceValueTotal);
+  document.getElementById('rp-sub').textContent = (r.rows.length>1?'Valor de referência total dos itens':'Valor de referência após depreciação') + (r.reachedLife ? ' — vida útil estimada atingida' : '');
 
   const kDep = document.getElementById('kpi-dep');
   if(kDep){
     kDep.textContent = (r.totalDepPct*100).toFixed(1)+'%';
-    const perdaMes = r.usedMonths>0 ? r.depreciatedValue/r.usedMonths : 0;
+    const perdaMes = r.usedMonths>0 ? r.depreciatedValueTotal/r.usedMonths : 0;
     document.getElementById('kpi-perda-mes').textContent = brl(perdaMes);
-    document.getElementById('kpi-vu-efetiva').textContent = r.adjustedLifeMonths.toFixed(1)+' meses';
-    const restante = Math.max(0, r.adjustedLifeMonths - r.usedMonths);
+    document.getElementById('kpi-vu-efetiva').textContent = r.adjustedLifeWeighted.toFixed(1)+' meses';
+    const restante = Math.max(0, r.adjustedLifeWeighted - r.usedMonths);
     document.getElementById('kpi-vu-restante').textContent = restante.toFixed(1)+' meses';
   }
   return r;
@@ -788,54 +816,69 @@ function renderMemoria(){
   const r = updateResultPanel();
   const f = state.form;
   const cont = document.getElementById('memoria-container');
+  const breakdownCont = document.getElementById('itens-breakdown-container');
   let flags = '';
   if(r.reachedLife){
-    flags += `<div class="notice notice-warn"><span>⏳</span><div><b>Bem atingiu a vida útil estimada.</b> O valor calculado representa apenas a referência de depreciação e não significa necessariamente ausência de valor econômico ou funcional.</div></div>`;
+    flags += `<div class="notice notice-warn"><span>⏳</span><div><b>Bem(ns) atingiram a vida útil estimada.</b> O valor calculado representa apenas a referência de depreciação e não significa necessariamente ausência de valor econômico ou funcional.</div></div>`;
   }
-  if(r.occupancyNote){
-    flags += `<div class="notice notice-info"><span>📊</span><div>${r.occupancyNote}</div></div>`;
+
+  if(breakdownCont){
+    breakdownCont.innerHTML = r.rows.length<=1 ? '' : `
+    <div class="card" style="margin-top:16px">
+      <h2>Detalhamento por item</h2>
+      <p class="hint">Cada item usa sua própria categoria e valor pago; tempo de uso, condição e análise de desgaste são os mesmos para todos os itens desta análise.</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Item</th><th>Categoria</th><th>V. pago</th><th>V. corrigido</th><th>Vida útil</th><th>Deprec.</th><th>V. residual</th><th>V. referência</th></tr></thead>
+        <tbody>
+        ${r.rows.map((x,idx)=>`<tr>
+          <td>${x.item.descricao || 'Item '+(idx+1)}</td>
+          <td>${x.item.categoria==='Outro'&&x.item.categoriaCustom?x.item.categoriaCustom:x.item.categoria}</td>
+          <td class="mono">${brl(parseBRL(x.item.valorOriginal))}</td>
+          <td class="mono">${brl(x.r.baseValue)}</td>
+          <td class="mono">${x.r.adjustedLifeMonths.toFixed(1)}m</td>
+          <td class="mono">${(x.r.totalDepPct*100).toFixed(1)}%</td>
+          <td class="mono">${brl(x.r.residual)}</td>
+          <td class="mono">${brl(x.r.damageValue? x.r.damageValue : x.r.residual)}</td>
+        </tr>`).join('')}
+        </tbody>
+        <tfoot><tr>
+          <td colspan="2"><b>Total</b></td>
+          <td class="mono"><b>${brl(r.rows.reduce((s,x)=>s+parseBRL(x.item.valorOriginal),0))}</b></td>
+          <td class="mono"><b>${brl(r.baseValueTotal)}</b></td>
+          <td></td>
+          <td class="mono"><b>${(r.totalDepPct*100).toFixed(1)}%</b></td>
+          <td class="mono"><b>${brl(r.residualTotal)}</b></td>
+          <td class="mono"><b>${brl(r.manualOverride!=null? r.manualOverride : (r.damageValueTotal||r.residualTotal))}</b></td>
+        </tr></tfoot>
+      </table></div>
+      ${r.manualOverride!=null?`<p class="hint" style="margin:10px 0 0">O valor de referência total acima foi sobrescrito manualmente (${brl(r.manualOverride)}), substituindo a soma automática dos itens (${brl(r.damageValueAutoTotal||0)}).</p>`:''}
+    </div>`;
   }
 
   cont.innerHTML = `
   <details class="memoria" open>
     <summary>Memória de cálculo</summary>
     <ol>
-      <li><b>Valor base utilizado:</b> ${brl(r.baseValue)} (valor pago de ${brl(parseBRL(f.valorOriginal))}, corrigido monetariamente para o valor de reposição de hoje).</li>
-      <li><b>Correção monetária:</b> aplicada a ${RULES.defaultAnnualIndex}% a.a. sobre o valor pago — a correção apenas atualiza o preço para hoje, não representa valorização do bem.</li>
-      <li><b>Vida útil considerada:</b> base de ${r.baseLife} meses para a categoria "${f.categoria}"${f.vidaUtilCustom?' (sobrescrita manualmente)':''}, ajustada pelos fatores de qualidade e intensidade para ${r.adjustedLifeMonths.toFixed(1)} meses.</li>
-      <li><b>Fatores aplicados:</b> qualidade "${f.qualidade}" (×${r.qF}) e intensidade "${f.intensidade}" (×${r.iF}) — produto combinado ×${r.factorProduct.toFixed(2)}.</li>
-      <li><b>Tempo de uso:</b> ${Engine.humanTime(r.usedMonths)} (${r.usedMonths.toFixed(1)} meses), de ${fmtDate(toDate(f.dataInicioUso)||toDate(f.dataAquisicao))} até ${fmtDate(toDate(f.dataReferencia))}.</li>
-      <li><b>Percentual de vida útil consumida:</b> ${(r.lifeFraction*100).toFixed(2)}%.</li>
-      <li><b>Curva de depreciação utilizada:</b> modelo híbrido — Fase 1 (perda inicial de ${(r.initialLoss*100).toFixed(1)}% ao entrar em uso) + Fase 2 (curva progressiva não linear com desaceleração, expoente 0,72 sobre a fração de vida útil consumida).
-        <div class="formula">Valor residual = Valor base × (1 − perda inicial) × (1 − depreciação acumulada)
-Depreciação acumulada = (% vida útil consumida) ^ 0,72 = ${(r.accumulatedDepPct*100).toFixed(2)}%</div>
+      <li><b>Itens analisados:</b> ${r.rows.length} ${r.rows.length===1?'item':'itens'} — ${r.rows.map(x=>x.item.categoria==='Outro'&&x.item.categoriaCustom?x.item.categoriaCustom:x.item.categoria).join(', ')}.</li>
+      <li><b>Valor base total utilizado:</b> ${brl(r.baseValueTotal)} (soma dos valores pagos originalmente, corrigidos monetariamente a ${RULES.defaultAnnualIndex}% a.a. para o valor de reposição de hoje — a correção apenas atualiza o preço, não representa valorização do bem).</li>
+      <li><b>Qualidade e intensidade de uso:</b> padronizadas para todos os itens — qualidade "${FIXED_QUALITY}" (×1,00) e uso "${FIXED_INTENSITY==='Normal'?'regular':FIXED_INTENSITY}" (×1,00), sem ajuste adicional sobre a vida útil.</li>
+      <li><b>Tempo de uso:</b> ${Engine.humanTime(r.usedMonths)} (${r.usedMonths.toFixed(1)} meses), de ${fmtDate(toDate(f.dataInicioUso)||toDate(f.dataAquisicao))} até ${fmtDate(toDate(f.dataReferencia))} — mesmo período aplicado a todos os itens.</li>
+      <li><b>Vida útil ajustada (média ponderada pelo valor):</b> ${r.adjustedLifeWeighted.toFixed(1)} meses${f.vidaUtilCustom?' (vida útil manual sobrescrita para todos os itens)':''} — ${(r.lifeFraction*100).toFixed(2)}% da vida útil consumida.</li>
+      <li><b>Curva de depreciação utilizada:</b> modelo híbrido — Fase 1 (perda inicial de ${(r.initialLoss*100).toFixed(1)}% ao entrar em uso) + Fase 2 (curva progressiva não linear com desaceleração, expoente 0,72 sobre a fração de vida útil consumida), aplicada individualmente a cada item.
+        <div class="formula">Valor residual do item = Valor base do item × (1 − perda inicial) × (1 − depreciação acumulada do item)</div>
       </li>
-      <li><b>Depreciação acumulada:</b> ${(r.totalDepPct*100).toFixed(2)}% → ${brl(r.depreciatedValue)}.</li>
-      <li><b>Valor residual estimado:</b> ${brl(r.residual)}${r.residualMinValue>0?` (respeitando piso mínimo de ${brl(r.residualMinValue)})`:''}.</li>
-      <li><b>Análise de dano:</b> ${r.damageNote}${r.damageValue?` Valor de referência do dano: ${brl(r.damageValue)}.`:''}</li>
-      <li><b>Valor final de referência:</b> ${r.replacementTotal!=null ? `total de reposição ${brl(r.replacementTotal)}, com valor de referência para reembolso de ${brl(r.refundReference)} (após dedução do residual já apurado).` : (r.damageValue ? `${brl(r.damageValue)} (valor de referência do dano, acima do desgaste natural).` : brl(r.residual)+'.')}</li>
+      <li><b>Depreciação acumulada total:</b> ${(r.totalDepPct*100).toFixed(2)}% → ${brl(r.depreciatedValueTotal)}.</li>
+      <li><b>Valor residual total estimado:</b> ${brl(r.residualTotal)} (soma do valor residual de cada item).</li>
+      <li><b>Análise de dano:</b> ${r.damageNote}${r.damageValueTotal?` Valor de referência do dano (soma dos itens): ${brl(r.damageValueAutoTotal||r.damageValueTotal)}.`:''}</li>
+      <li><b>Valor final de referência:</b> ${brl(r.referenceValueTotal)}${r.manualOverride!=null?' (valor manual informado, substituindo a soma automática dos itens).':'.'}</li>
     </ol>
   </details>
   ${flags}
-  ${r.replacementTotal!=null ? `
-  <div class="card" style="margin-top:16px">
-    <h2>Caso de reposição</h2>
-    <div class="tablewrap"><table>
-      <tr><td>Valor de reposição atual</td><td class="mono">${brl(r.baseValue)}</td></tr>
-      <tr><td>Valor residual estimado</td><td class="mono">${brl(r.residual)}</td></tr>
-      <tr><td>Frete</td><td class="mono">${brl(parseBRL(f.frete))}</td></tr>
-      <tr><td>Montagem</td><td class="mono">${brl(parseBRL(f.montagem))}</td></tr>
-      <tr><td>Instalação</td><td class="mono">${brl(parseBRL(f.instalacao))}</td></tr>
-      <tr><td>Outros custos comprovados</td><td class="mono">${brl(parseBRL(f.outrosCustos))}</td></tr>
-      <tr><td><b>Total de reposição</b></td><td class="mono"><b>${brl(r.replacementTotal)}</b></td></tr>
-      <tr><td><b>Valor de referência para reembolso</b></td><td class="mono"><b>${brl(r.refundReference)}</b></td></tr>
-    </table></div>
-  </div>`:''}
   `;
   drawDepreciationCurve(r);
 }
 
-/* Curva de depreciação — replica o gráfico não linear de valor x tempo (referência Xvantage) */
+/* Curva de depreciação agregada — soma o valor estimado de todos os itens ao longo do tempo */
 function drawDepreciationCurve(r){
   const canvas = document.getElementById('chart-curve');
   if(!canvas) return;
@@ -844,8 +887,17 @@ function drawDepreciationCurve(r){
   const ink = getCSS('--ink-soft'), primary = getCSS('--primary'), line = getCSS('--line'), surface2 = getCSS('--surface-2');
   const padL = 54, padR = 16, padT = 18, padB = 32;
   const plotW = w - padL - padR, plotH = h - padT - padB;
-  const lifeMonths = Math.max(1, r.adjustedLifeMonths);
-  const baseValue = r.baseValue || 0;
+  const baseValueTotal = r.baseValueTotal || 0;
+  const lifeMonths = Math.max(1, ...r.rows.map(x=>x.r.adjustedLifeMonths), r.usedMonths);
+
+  // valor agregado no instante t: soma, por item, de base_i*(1-perdaInicial)*(1-curva(min(1,t/vida_i)))
+  function aggregateValueAt(t){
+    return r.rows.reduce((sum,x)=>{
+      const frac = Math.min(1, t/Math.max(1,x.r.adjustedLifeMonths));
+      const dep = Engine.depreciationCurve(frac);
+      return sum + x.r.baseValue*(1-x.r.initialLoss)*(1-dep);
+    }, 0);
+  }
 
   // eixo
   ctx.strokeStyle = line; ctx.lineWidth = 1;
@@ -854,22 +906,20 @@ function drawDepreciationCurve(r){
   // grade horizontal + labels de valor
   ctx.font = '10px Rubik, sans-serif'; ctx.fillStyle = ink; ctx.textAlign = 'right';
   for(let i=0;i<=4;i++){
-    const val = baseValue * (1 - i/4);
+    const val = baseValueTotal * (1 - i/4);
     const y = padT + (plotH*i/4);
     ctx.strokeStyle = surface2; ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(w-padR,y); ctx.stroke();
     ctx.fillText(brl(val).replace('R$',''), padL-6, y+3);
   }
 
-  // curva: Valor(t) = base * (1-perdaInicial) * (1 - (t/vidaUtil)^0.72), 0<=t<=vidaUtil
+  // curva agregada
   const steps = 60;
   ctx.strokeStyle = primary; ctx.lineWidth = 2.5; ctx.beginPath();
   for(let i=0;i<=steps;i++){
     const t = (lifeMonths*i)/steps;
-    const frac = Math.min(1, t/lifeMonths);
-    const dep = Engine.depreciationCurve(frac);
-    const val = baseValue * (1-r.initialLoss) * (1-dep);
+    const val = aggregateValueAt(t);
     const x = padL + (plotW*i)/steps;
-    const y = padT + plotH * (1 - (val/(baseValue||1)));
+    const y = padT + plotH * (1 - (val/(baseValueTotal||1)));
     if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
   }
   ctx.stroke();
@@ -881,7 +931,7 @@ function drawDepreciationCurve(r){
   // marcador "hoje"
   const fracNow = Math.min(1, r.usedMonths/lifeMonths);
   const xNow = padL + plotW*fracNow;
-  const yNow = padT + plotH * (1 - (r.residual/(baseValue||1)));
+  const yNow = padT + plotH * (1 - (r.residualTotal/(baseValueTotal||1)));
   ctx.strokeStyle = ink; ctx.setLineDash([3,3]); ctx.beginPath(); ctx.moveTo(xNow,padT); ctx.lineTo(xNow,h-padB); ctx.stroke(); ctx.setLineDash([]);
   ctx.beginPath(); ctx.arc(xNow,yNow,5,0,Math.PI*2); ctx.fillStyle = primary; ctx.fill();
   ctx.strokeStyle = getCSS('--surface'); ctx.lineWidth=2; ctx.stroke();
@@ -895,27 +945,45 @@ function drawDepreciationCurve(r){
 
   const legend = document.getElementById('chart-curve-legend');
   if(legend){
-    legend.innerHTML = `<span><span class="sw" style="background:${primary}"></span>Valor estimado do bem</span><span><span class="sw" style="background:${ink}"></span>Hoje — ${Math.round(r.usedMonths)} meses de uso, valor estimado ${brl(r.residual)}</span>`;
+    legend.innerHTML = `<span><span class="sw" style="background:${primary}"></span>Valor estimado (soma dos itens)</span><span><span class="sw" style="background:${ink}"></span>Hoje — ${Math.round(r.usedMonths)} meses de uso, valor estimado ${brl(r.residualTotal)}</span>`;
   }
 }
+
+function findItem(id){ return state.form.itens.find(it=>it.id===id); }
 
 function attachStepEvents(){
   const f = state.form;
   const $ = id=>document.getElementById(id);
   const bind = (id,key,transform)=>{ const e=$(id); if(e) e.addEventListener('input', ()=>{ f[key]= transform?transform(e.value):e.value; refreshLive(); }); };
 
-  bind('in-cat-custom','categoriaCustom'); bind('in-marca','marca');
-  bind('in-descricao','descricao');
-  const catEl = $('in-categoria'); if(catEl) catEl.addEventListener('change', e=>{ f.categoria=e.target.value; renderSteps(); });
+  // Datas e vida útil manual — compartilhadas por todos os itens
+  bind('in-data-aq','dataAquisicao'); bind('in-inicio-uso','dataInicioUso');
+  bind('in-data-ref','dataReferencia'); bind('in-vida-custom','vidaUtilCustom');
 
-  bind('in-data-aq','dataAquisicao'); bind('in-valor-orig','valorOriginal');
-
-  bind('in-inicio-uso','dataInicioUso');
-  bind('in-data-ref','dataReferencia');
-  bind('in-vida-custom','vidaUtilCustom');
-
-  const q=$('chip-qualidade'); if(q) q.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.qualidade=c.dataset.val; renderSteps(); }));
-  const iEl=$('chip-intensidade'); if(iEl) iEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{ f.intensidade=c.dataset.val; renderSteps(); }));
+  // Campos por item (delegação por data-id, já que os inputs são recriados a cada item)
+  document.querySelectorAll('#itens-list .in-categoria').forEach(el=>el.addEventListener('change', e=>{
+    const it = findItem(e.target.dataset.id); if(it){ it.categoria = e.target.value; renderSteps(); }
+  }));
+  document.querySelectorAll('#itens-list .in-marca').forEach(el=>el.addEventListener('input', e=>{
+    const it = findItem(e.target.dataset.id); if(it){ it.marca = e.target.value; refreshLive(); }
+  }));
+  document.querySelectorAll('#itens-list .in-cat-custom').forEach(el=>el.addEventListener('input', e=>{
+    const it = findItem(e.target.dataset.id); if(it){ it.categoriaCustom = e.target.value; refreshLive(); }
+  }));
+  document.querySelectorAll('#itens-list .in-descricao').forEach(el=>el.addEventListener('input', e=>{
+    const it = findItem(e.target.dataset.id); if(it){ it.descricao = e.target.value; refreshLive(); }
+  }));
+  document.querySelectorAll('#itens-list .in-valor-orig').forEach(el=>el.addEventListener('input', e=>{
+    const it = findItem(e.target.dataset.id); if(it){ it.valorOriginal = e.target.value; refreshLive(); }
+  }));
+  document.querySelectorAll('#itens-list .item-remove').forEach(el=>el.addEventListener('click', e=>{
+    f.itens = f.itens.filter(it=>it.id!==e.target.dataset.id);
+    renderSteps();
+  }));
+  const addBtn = $('btn-add-item'); if(addBtn) addBtn.addEventListener('click', ()=>{
+    f.itens.push(novoItem());
+    renderSteps();
+  });
 
   const cEl=$('chip-condicao'); if(cEl) cEl.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
     f.condicao=c.dataset.val;
@@ -927,29 +995,6 @@ function attachStepEvents(){
 }
 
 function refreshLive(){ renderMemoria(); }
-
-/* ------------------------------- TABS ------------------------------- */
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('view-'+btn.dataset.view).classList.add('active');
-    if(btn.dataset.view==='historico') renderHistorico();
-    if(btn.dataset.view==='painel') renderPainel();
-    if(btn.dataset.view==='distrato') renderDistratoSelect();
-  });
-});
-
-/* ------------------------------- HISTÓRICO (localStorage) ------------------------------- */
-const History = {
-  KEY:'depr360_history_v1',
-  load(){ try{ return JSON.parse(localStorage.getItem(this.KEY)||'[]'); }catch(e){ return []; } },
-  save(list){ try{ localStorage.setItem(this.KEY, JSON.stringify(list)); }catch(e){} },
-  add(item){ const list=this.load(); list.unshift(item); this.save(list); return list; },
-  updateStatus(id,status){ const list=this.load(); const it=list.find(i=>i.id===id); if(it){ it.status=status; this.save(list); } return list; },
-  remove(id){ const list=this.load().filter(i=>i.id!==id); this.save(list); return list; }
-};
 
 document.getElementById('btn-print').addEventListener('click', ()=>{ window.print(); });
 
@@ -965,100 +1010,6 @@ document.getElementById('btn-copy').addEventListener('click', ()=>{
   } else { done(); }
 });
 
-function renderHistorico(){
-  const list = History.load();
-  const cont = document.getElementById('hist-table');
-  if(list.length===0){ cont.innerHTML='<div class="empty">Nenhuma análise salva ainda. Salve uma análise na calculadora para começar o histórico.</div>'; return; }
-  cont.innerHTML = `<div class="tablewrap"><table>
-    <thead><tr><th>ID</th><th>Unidade</th><th>Bem</th><th>Categoria</th><th>Valor residual</th><th>Valor referência</th><th>Status</th><th>Data</th><th></th></tr></thead>
-    <tbody>
-    ${list.map(it=>`
-      <tr>
-        <td class="mono">${it.id}</td>
-        <td>${it.unidade}</td>
-        <td>${it.bem}</td>
-        <td>${it.categoria}</td>
-        <td class="mono">${brl(it.valorResidual)}</td>
-        <td class="mono">${brl(it.valorReferencia)}</td>
-        <td>
-          <select class="hist-status small-btn" data-id="${it.id}" style="padding:4px 8px; font-size:11.5px">
-            ${['Em análise','Aprovado','Em negociação','Finalizado'].map(s=>`<option ${s===it.status?'selected':''}>${s}</option>`).join('')}
-          </select>
-        </td>
-        <td>${new Date(it.data).toLocaleDateString('pt-BR')}</td>
-        <td><button class="btn btn-outline small-btn hist-del" data-id="${it.id}">Excluir</button></td>
-      </tr>`).join('')}
-    </tbody>
-  </table></div>`;
-  cont.querySelectorAll('.hist-status').forEach(sel=>sel.addEventListener('change', e=>{ History.updateStatus(e.target.dataset.id, e.target.value); }));
-  cont.querySelectorAll('.hist-del').forEach(btn=>btn.addEventListener('click', e=>{ if(confirm('Excluir esta análise do histórico?')){ History.remove(e.target.dataset.id); renderHistorico(); renderPainel(); } }));
-}
-
-/* ------------------------------- DISTRATO ------------------------------- */
-function renderDistratoSelect(){
-  const list = History.load();
-  const sel = document.getElementById('distrato-select');
-  const filterUnit = document.getElementById('distrato-unidade');
-  const filtered = list.filter(it => !filterUnit.value || it.unidade.toLowerCase().includes(filterUnit.value.toLowerCase()));
-  sel.innerHTML = filtered.length ? filtered.map(it=>`<option value="${it.id}">${it.unidade} — ${it.bem} — ${brl(it.valorReferencia)}</option>`).join('') : '<option disabled>Nenhuma análise salva</option>';
-  filterUnit.oninput = renderDistratoSelect;
-}
-document.getElementById('btn-consolidar')?.addEventListener('click', ()=>{
-  const sel = document.getElementById('distrato-select');
-  const ids = Array.from(sel.selectedOptions).map(o=>o.value);
-  const list = History.load().filter(it=>ids.includes(it.id));
-  const cont = document.getElementById('distrato-result');
-  if(list.length===0){ cont.innerHTML = '<div class="empty">Selecione ao menos uma análise para consolidar.</div>'; return; }
-  const total = list.reduce((s,it)=>s+it.valorReferencia,0);
-  cont.innerHTML = `
-  <div class="card">
-    <h2>Tabela consolidada de distrato</h2>
-    <div class="tablewrap"><table>
-      <thead><tr><th>Unidade</th><th>Bem</th><th>Categoria</th><th>Aquisição</th><th>Uso (meses)</th><th>V. original</th><th>V. atualizado</th><th>V. reposição</th><th>Vida útil</th><th>Deprec.</th><th>V. residual</th><th>Condição</th><th>Dano</th><th>V. referência</th></tr></thead>
-      <tbody>
-      ${list.map(it=>`<tr>
-        <td>${it.unidade}</td><td>${it.bem}</td><td>${it.categoria}</td>
-        <td>${it.dataAquisicao? fmtDate(toDate(it.dataAquisicao)):'—'}</td>
-        <td class="mono">${it.tempoUsoMeses}</td>
-        <td class="mono">${brl(it.valorOriginal)}</td><td class="mono">${brl(it.valorAtualizado)}</td>
-        <td class="mono">${brl(it.valorReposicao)}</td><td class="mono">${it.vidaUtil}m</td>
-        <td class="mono">${it.depreciacaoPct}%</td><td class="mono">${brl(it.valorResidual)}</td>
-        <td>${it.condicao}</td><td class="mono">${brl(it.dano)}</td><td class="mono">${brl(it.valorReferencia)}</td>
-      </tr>`).join('')}
-      </tbody>
-    </table></div>
-    <div class="result-card" style="margin-top:16px">
-      <div class="eyebrow">Valor total de referência</div>
-      <div class="value mono">${brl(total)}</div>
-      <div class="sub">${list.length} bem(ns) consolidado(s) — estimativa técnica, não constitui título de cobrança automática.</div>
-    </div>
-  </div>`;
-});
-
-/* ------------------------------- PAINEL / DASHBOARD ------------------------------- */
-function renderPainel(){
-  const list = History.load();
-  const kpi = document.getElementById('kpi-grid');
-  const totalReposicao = list.reduce((s,i)=>s+i.valorReposicao,0);
-  const totalResidual = list.reduce((s,i)=>s+i.valorResidual,0);
-  const depMedia = list.length? list.reduce((s,i)=>s+i.depreciacaoPct,0)/list.length : 0;
-  const proximosFim = list.filter(i=> i.vidaUtil>0 && (i.tempoUsoMeses/i.vidaUtil)>=0.85).length;
-  const comDano = list.filter(i=>i.dano>0).length;
-  const emNegociacao = list.filter(i=>i.status==='Em negociação').length;
-
-  kpi.innerHTML = `
-    <div class="kpi"><div class="k-label">Bens cadastrados</div><div class="k-val mono">${list.length}</div></div>
-    <div class="kpi"><div class="k-label">Valor total de reposição</div><div class="k-val mono">${brl(totalReposicao)}</div></div>
-    <div class="kpi"><div class="k-label">Valor residual total</div><div class="k-val mono">${brl(totalResidual)}</div></div>
-    <div class="kpi"><div class="k-label">Depreciação média</div><div class="k-val mono">${depMedia.toFixed(1)}%</div></div>
-    <div class="kpi"><div class="k-label">Próximos do fim da vida útil</div><div class="k-val mono">${proximosFim}</div></div>
-    <div class="kpi"><div class="k-label">Com dano extraordinário</div><div class="k-val mono">${comDano}</div></div>
-    <div class="kpi"><div class="k-label">Em negociação (distrato)</div><div class="k-val mono">${emNegociacao}</div></div>
-    <div class="kpi"><div class="k-label">Análises "em análise"</div><div class="k-val mono">${list.filter(i=>i.status==='Em análise').length}</div></div>
-  `;
-  drawBars(list); drawCategoryDep(list); drawCondition(list); drawLifeRemaining(list);
-}
-
 function getCSS(varName){ return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
 
 function setupCanvas(canvas){
@@ -1070,119 +1021,6 @@ function setupCanvas(canvas){
   return {ctx, w, h};
 }
 
-function drawBars(list){
-  const canvas = document.getElementById('chart-bars');
-  const {ctx,w,h} = setupCanvas(canvas);
-  ctx.clearRect(0,0,w,h);
-  const ink = getCSS('--ink-soft'), primary=getCSS('--primary'), accent=getCSS('--accent'), line=getCSS('--line');
-  ctx.font='11px Inter'; ctx.fillStyle=ink;
-  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
-  const items = list.slice(0,8);
-  const max = Math.max(...items.map(i=>i.valorReposicao),1);
-  const padL=10, padB=34, padT=14, barGroupW=(w-padL-10)/items.length;
-  // axis
-  ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(padL,h-padB); ctx.lineTo(w-6,h-padB); ctx.stroke();
-  items.forEach((it,i)=>{
-    const x = padL + i*barGroupW + 8;
-    const bw = (barGroupW-24)/2;
-    const hRep = (it.valorReposicao/max)*(h-padB-padT);
-    const hRes = (it.valorResidual/max)*(h-padB-padT);
-    ctx.fillStyle=primary; ctx.fillRect(x, h-padB-hRep, bw, hRep);
-    ctx.fillStyle=accent; ctx.fillRect(x+bw+4, h-padB-hRes, bw, hRes);
-    ctx.fillStyle=ink; ctx.save(); ctx.font='9.5px Inter';
-    const label = (it.bem||'').slice(0,8);
-    ctx.fillText(label, x-2, h-padB+14);
-    ctx.restore();
-  });
-  document.querySelector('#view-painel .chart-card:nth-child(1) .legend')?.remove();
-  const legend = document.createElement('div'); legend.className='legend';
-  legend.innerHTML = `<span><span class="sw" style="background:${primary}"></span>Valor de reposição</span><span><span class="sw" style="background:${accent}"></span>Valor residual</span>`;
-  canvas.parentElement.appendChild(legend);
-}
-
-function drawCategoryDep(list){
-  const canvas = document.getElementById('chart-cat');
-  const {ctx,w,h} = setupCanvas(canvas);
-  ctx.clearRect(0,0,w,h);
-  const ink = getCSS('--ink-soft'), primary=getCSS('--primary'), line=getCSS('--line');
-  ctx.font='11px Inter'; ctx.fillStyle=ink;
-  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
-  const byCategory = {};
-  list.forEach(i=>{ (byCategory[i.categoria]=byCategory[i.categoria]||[]).push(i.depreciacaoPct); });
-  const cats = Object.keys(byCategory).slice(0,8);
-  const avgs = cats.map(c=>byCategory[c].reduce((a,b)=>a+b,0)/byCategory[c].length);
-  const padL=10, padB=34, padT=14, barW=(w-padL-10)/cats.length;
-  ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(padL,h-padB); ctx.lineTo(w-6,h-padB); ctx.stroke();
-  cats.forEach((c,i)=>{
-    const x = padL + i*barW + 6;
-    const bh = (avgs[i]/100)*(h-padB-padT);
-    ctx.fillStyle = primary; ctx.fillRect(x, h-padB-bh, barW-12, bh);
-    ctx.fillStyle = ink; ctx.font='9px Inter';
-    ctx.fillText(c.slice(0,7), x-2, h-padB+13);
-    ctx.font='10px JetBrains Mono, monospace'; ctx.fillStyle=getCSS('--ink');
-    ctx.fillText(avgs[i].toFixed(0)+'%', x, h-padB-bh-4);
-  });
-}
-
-function drawCondition(list){
-  const canvas = document.getElementById('chart-cond');
-  const {ctx,w,h} = setupCanvas(canvas);
-  ctx.clearRect(0,0,w,h);
-  const ink = getCSS('--ink-soft');
-  ctx.font='11px Inter'; ctx.fillStyle=ink;
-  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
-  const colors = {'Excelente':getCSS('--good'),'Bom':getCSS('--primary'),'Regular':getCSS('--warn'),'Ruim':getCSS('--accent'),'Danificado':getCSS('--bad')};
-  const counts = {};
-  list.forEach(i=>{ counts[i.condicao]=(counts[i.condicao]||0)+1; });
-  const entries = Object.entries(counts);
-  const total = list.length;
-  const cx=w*0.32, cy=h/2, r=Math.min(w*0.28,h*0.38);
-  let start=-Math.PI/2;
-  entries.forEach(([label,count])=>{
-    const angle = (count/total)*Math.PI*2;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+angle); ctx.closePath();
-    ctx.fillStyle = colors[label]||getCSS('--ink-soft'); ctx.fill();
-    start += angle;
-  });
-  let ly = 20;
-  entries.forEach(([label,count])=>{
-    ctx.fillStyle = colors[label]||getCSS('--ink-soft');
-    ctx.fillRect(w*0.62, ly, 10, 10);
-    ctx.fillStyle = getCSS('--ink'); ctx.font='11px Inter';
-    ctx.fillText(`${label} (${count})`, w*0.62+16, ly+9);
-    ly += 20;
-  });
-}
-
-function drawLifeRemaining(list){
-  const canvas = document.getElementById('chart-vu');
-  const {ctx,w,h} = setupCanvas(canvas);
-  ctx.clearRect(0,0,w,h);
-  const ink = getCSS('--ink-soft'), primary=getCSS('--primary'), warn=getCSS('--warn'), bad=getCSS('--bad'), good=getCSS('--good'), line=getCSS('--line');
-  ctx.font='11px Inter'; ctx.fillStyle=ink;
-  if(list.length===0){ ctx.fillText('Sem dados — salve análises na calculadora.', 14, h/2); return; }
-  const bands = [
-    {label:'0–25%', color:good, test:f=>f<=0.25},
-    {label:'26–50%', color:primary, test:f=>f>0.25&&f<=0.5},
-    {label:'51–75%', color:warn, test:f=>f>0.5&&f<=0.75},
-    {label:'76–100%', color:bad, test:f=>f>0.75}
-  ];
-  const counts = bands.map(b=>list.filter(i=>{ const f = i.vidaUtil? i.tempoUsoMeses/i.vidaUtil : 0; return b.test(Math.min(1,f)); }).length);
-  const max = Math.max(...counts,1);
-  const padL=10, padB=34, padT=14, barW=(w-padL-10)/bands.length;
-  ctx.strokeStyle=line; ctx.beginPath(); ctx.moveTo(padL,h-padB); ctx.lineTo(w-6,h-padB); ctx.stroke();
-  bands.forEach((b,i)=>{
-    const x = padL + i*barW + 10;
-    const bh = (counts[i]/max)*(h-padB-padT);
-    ctx.fillStyle = b.color; ctx.fillRect(x, h-padB-bh, barW-20, bh);
-    ctx.fillStyle = ink; ctx.font='10px Inter';
-    ctx.fillText(b.label, x-2, h-padB+14);
-    ctx.fillStyle=getCSS('--ink'); ctx.font='10px JetBrains Mono, monospace';
-    ctx.fillText(String(counts[i]), x+(barW-20)/2-4, h-padB-bh-4);
-  });
-}
-
 /* ------------------------------- INIT ------------------------------- */
 renderSteps();
-window.addEventListener('resize', ()=>{ const vp=document.getElementById('view-painel'); if(vp && vp.classList.contains('active')) renderPainel(); });
 </script>
