@@ -560,7 +560,7 @@ const state = {
     dataAquisicao:'',
     dataInicioUso:'', dataReferencia: new Date().toISOString().slice(0,10),
     vidaUtilCustom:'',
-    condicao:'Bom', analiseDesgaste:'sim', danoPct:'', danoValor:'',
+    condicao:'Regular', analiseDesgaste:'sim', danoPct:'', danoValor:'',
     residualMinPct:0, initialLossPct:5, responsavel:'', proprietario:''
   }
 };
@@ -632,14 +632,14 @@ function renderSteps(){
       <div class="field">
         <label>Condição atual</label>
         <div class="chiprow" id="chip-condicao">
-          ${['Excelente','Bom','Regular','Ruim','Danificado','Ausente'].map(c=>`<button class="chip ${c===f.condicao?'sel':''}" data-val="${c}">${c}</button>`).join('')}
+          ${['Regular','Ruim','Danificado','Ausente'].map(c=>`<button class="chip ${c===f.condicao?'sel':''}" data-val="${c}">${c}</button>`).join('')}
         </div>
       </div>
     </div>
     <div class="section-eyebrow"><div class="num">5</div><div class="lbl">Análise de condição</div></div>
     <div class="card">
       ${f.condicao==='Ausente'?`
-      <div class="notice notice-warn"><span>📦</span><div><b>Item ausente (não localizado na vistoria).</b> Como não é possível observar o desgaste de um item que não está na unidade, ele é tratado como dano extraordinário — o valor de referência considera a última condição registrada em vistoria anterior (ou "Bom", como padrão conservador quando não há registro) e desconta a depreciação já consumida pelo tempo em que o item esteve na unidade. Nunca se cobra o valor de um bem novo.</div></div>
+      <div class="notice notice-warn"><span>📦</span><div><b>Item ausente (não localizado na vistoria).</b> Como não é possível observar o desgaste de um item que não está na unidade, ele é tratado como dano extraordinário — o valor de referência considera a última condição registrada em vistoria anterior (ou "Regular", como padrão conservador quando não há registro) e desconta a depreciação já consumida pelo tempo em que o item esteve na unidade. Nunca se cobra o valor de um bem novo.</div></div>
       <div class="field"><label for="in-dano-valor2">Valor manual de referência total <span class="tip">(opcional — sobrescreve a soma automática de todos os itens)</span></label><input id="in-dano-valor2" placeholder="R$ 0,00" value="${f.danoValor}"></div>
       `:`
       <p class="hint">O estado atual do bem é compatível com o desgaste esperado pelo tempo e intensidade de uso? Aplicado igualmente a todos os itens desta análise.</p>
