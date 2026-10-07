@@ -670,6 +670,10 @@ function implPanelHtml(){
     <input id="impl-taxa" placeholder="R$ 400,00" value="${f.impl.taxa}">
   </div>
   <div class="notice notice-info" style="margin-top:14px" id="impl-resumo">${implResumoTxt(c)}</div>
+  <div style="display:flex; gap:8px; margin:14px 0 10px">
+    <button type="button" class="btn btn-outline small-btn" id="impl-marcar-todos">Marcar tudo</button>
+    <button type="button" class="btn btn-outline small-btn" id="impl-desmarcar-todos">Desmarcar tudo</button>
+  </div>
   <div class="tablewrap"><table>
     <thead><tr><th></th><th>Item</th><th>Qtd.</th><th>Preço unit. ref.</th><th>Valor rateado</th></tr></thead>
     <tbody>
@@ -725,6 +729,9 @@ function attachImplEvents(){
     else { f.modoValor='proprietario'; f.itens = (f.itensManual && f.itensManual.length) ? f.itensManual : [ novoItem() ]; }
     renderSteps();
   }));
+  const setTodos = v=>{ IMPL_TABELA.forEach(t=>{ implSel(t.id).on = v; }); renderSteps(); };
+  const bm=$('impl-marcar-todos'); if(bm) bm.addEventListener('click',()=>setTodos(true));
+  const bd=$('impl-desmarcar-todos'); if(bd) bd.addEventListener('click',()=>setTodos(false));
   const tot = $('impl-total'); if(tot) tot.addEventListener('input',()=>{ f.impl.total = tot.value; refreshLive(); });
   const tx = $('impl-taxa'); if(tx) tx.addEventListener('input',()=>{ f.impl.taxa = tx.value; refreshLive(); });
   document.querySelectorAll('.impl-on').forEach(el=>el.addEventListener('change',()=>{ implSel(el.dataset.id).on = el.checked; refreshLive(); }));
