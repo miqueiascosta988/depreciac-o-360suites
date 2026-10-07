@@ -556,6 +556,7 @@ const state = {
   step: 0,
   form: {
     unidade:'',
+    modoValor:'proprietario', impl:{ total:'', taxa:400, sel:null }, itensManual:null,
     itens: [ novoItem() ],
     dataAquisicao:'',
     dataInicioUso:'', dataReferencia: new Date().toISOString().slice(0,10),
@@ -565,10 +566,187 @@ const state = {
   }
 };
 
+
+/* ------------------------------- TABELA DE ITENS DE IMPLANTAÇÃO ------------------------------- */
+/* Checklist padrão do apartamento (planilha "Depreciação ITENS"). O proprietário paga o valor cheio da
+   implantação (itens + taxa). Para depreciar item a item, o valor total pago, descontada a taxa de
+   implantação (limpeza + vistoria + fotos), é rateado entre os itens proporcionalmente ao preço de
+   referência × quantidade. Os preços unitários abaixo são estimativas de mercado editáveis na tela. */
+const IMPL_TAXA_PADRAO = 400;
+const IMPL_TABELA = [
+  {id:'m1', grupo:'Móveis', nome:'Cama box mola ensacada casal', qtd:1, preco:1800, cat:'Cama'},
+  {id:'m2', grupo:'Móveis', nome:'Mesa / bancada', qtd:1, preco:450, cat:'Mesa'},
+  {id:'m3', grupo:'Móveis', nome:'Cadeira', qtd:2, preco:180, cat:'Cadeira'},
+  {id:'m4', grupo:'Móveis', nome:'Suporte para TV', qtd:1, preco:120, cat:'Outro'},
+  {id:'m5', grupo:'Móveis', nome:'Nicho lateral de cabeceira', qtd:2, preco:150, cat:'Criado-mudo'},
+  {id:'b1', grupo:'Banheiro', nome:'Box de vidro', qtd:1, preco:900, cat:'Outro'},
+  {id:'b2', grupo:'Banheiro', nome:'Suporte de shampoo e sabonete de pendurar no box', qtd:1, preco:40, cat:'Outro'},
+  {id:'b3', grupo:'Banheiro', nome:'Lixeira', qtd:1, preco:60, cat:'Utensílio doméstico'},
+  {id:'b4', grupo:'Banheiro', nome:'Assento vaso sanitário', qtd:1, preco:70, cat:'Outro'},
+  {id:'b5', grupo:'Banheiro', nome:'Espelho banheiro', qtd:1, preco:120, cat:'Espelho'},
+  {id:'e1', grupo:'Enxoval', nome:'Protetor de colchão branco', qtd:1, preco:130, cat:'Protetor de colchão'},
+  {id:'e2', grupo:'Enxoval', nome:'Protetor de travesseiro branco', qtd:4, preco:35, cat:'Protetor de travesseiro'},
+  {id:'e3', grupo:'Enxoval', nome:'Travesseiro', qtd:4, preco:55, cat:'Travesseiro'},
+  {id:'e4', grupo:'Enxoval', nome:'Mantas microfibra', qtd:2, preco:90, cat:'Manta/Cobertor'},
+  {id:'e5', grupo:'Enxoval', nome:'Edredom branco', qtd:1, preco:220, cat:'Edredom'},
+  {id:'l1', grupo:'Eletros', nome:'Smart TV 43"', qtd:1, preco:1800, cat:'Televisão'},
+  {id:'l2', grupo:'Eletros', nome:'Micro-ondas', qtd:1, preco:550, cat:'Micro-ondas'},
+  {id:'l3', grupo:'Eletros', nome:'Geladeira', qtd:1, preco:1700, cat:'Geladeira'},
+  {id:'l4', grupo:'Eletros', nome:'Cooktop indução com 2 bocas portátil', qtd:1, preco:350, cat:'Cooktop'},
+  {id:'l5', grupo:'Eletros', nome:'Cafeteira elétrica (2 cafés)', qtd:1, preco:180, cat:'Cafeteira'},
+  {id:'l6', grupo:'Eletros', nome:'Antena digital', qtd:1, preco:80, cat:'Eletrônico'},
+  {id:'l7', grupo:'Eletros', nome:'Ar condicionado', qtd:1, preco:2400, cat:'Ar-condicionado'},
+  {id:'l8', grupo:'Eletros', nome:'Secador de cabelo de parede (hotelaria)', qtd:1, preco:180, cat:'Secador de cabelo'},
+  {id:'l9', grupo:'Eletros', nome:'Fechadura eletrônica', qtd:1, preco:700, cat:'Fechadura digital'},
+  {id:'c1', grupo:'Cozinha', nome:'Jogo de panelas p/ indução (caçarola, leiteira e frigideira)', qtd:1, preco:280, cat:'Panela'},
+  {id:'c2', grupo:'Cozinha', nome:'Pratos rasos brancos', qtd:2, preco:12, cat:'Louça/Utensílio de mesa'},
+  {id:'c3', grupo:'Cozinha', nome:'Pratos fundos brancos', qtd:2, preco:12, cat:'Louça/Utensílio de mesa'},
+  {id:'c4', grupo:'Cozinha', nome:'Pratos sobremesa brancos', qtd:2, preco:10, cat:'Louça/Utensílio de mesa'},
+  {id:'c5', grupo:'Cozinha', nome:'Garfos', qtd:2, preco:6, cat:'Louça/Utensílio de mesa'},
+  {id:'c6', grupo:'Cozinha', nome:'Facas', qtd:2, preco:6, cat:'Louça/Utensílio de mesa'},
+  {id:'c7', grupo:'Cozinha', nome:'Colheres de sopa', qtd:2, preco:6, cat:'Louça/Utensílio de mesa'},
+  {id:'c8', grupo:'Cozinha', nome:'Colheres de sobremesa', qtd:2, preco:5, cat:'Louça/Utensílio de mesa'},
+  {id:'c9', grupo:'Cozinha', nome:'Canecas brancas', qtd:2, preco:15, cat:'Louça/Utensílio de mesa'},
+  {id:'c10', grupo:'Cozinha', nome:'Abridor de vinho, garrafa e lata', qtd:1, preco:25, cat:'Utensílio doméstico'},
+  {id:'c11', grupo:'Cozinha', nome:'Tábua de corte', qtd:1, preco:35, cat:'Utensílio doméstico'},
+  {id:'c12', grupo:'Cozinha', nome:'Tigelas (bowl) brancas', qtd:2, preco:15, cat:'Louça/Utensílio de mesa'},
+  {id:'c13', grupo:'Cozinha', nome:'Taças resistentes', qtd:2, preco:20, cat:'Louça/Utensílio de mesa'},
+  {id:'c14', grupo:'Cozinha', nome:'Kit concha, escumadeira e colher de arroz', qtd:1, preco:60, cat:'Utensílio doméstico'},
+  {id:'c15', grupo:'Cozinha', nome:'Jogo americano', qtd:2, preco:20, cat:'Utensílio doméstico'},
+  {id:'c16', grupo:'Cozinha', nome:'Kit cozinha (lixeira de pia, escorredor e dispenser de detergente)', qtd:1, preco:120, cat:'Utensílio doméstico'},
+  {id:'a1', grupo:'Acessórios', nome:'Cortina (varão ou persiana)', qtd:1, preco:350, cat:'Cortina'},
+  {id:'a2', grupo:'Acessórios', nome:'Cabides comuns', qtd:5, preco:4, cat:'Utensílio doméstico'},
+  {id:'a3', grupo:'Acessórios', nome:'Lixeira de quarto aramada', qtd:1, preco:60, cat:'Utensílio doméstico'},
+  {id:'a4', grupo:'Acessórios', nome:'Luminária de quarto / abajur', qtd:1, preco:130, cat:'Luminária'},
+  {id:'a5', grupo:'Acessórios', nome:'Espelho de corpo inteiro (opcional)', qtd:1, preco:220, cat:'Espelho', off:true},
+  {id:'a6', grupo:'Acessórios', nome:'Itens de decoração (quadros, almofadas, flores etc.)', qtd:1, preco:250, cat:'Quadro decorativo'}
+];
+function implSel(id){
+  const f = state.form;
+  if(!f.impl.sel) f.impl.sel = {};
+  if(!f.impl.sel[id]){
+    const t = IMPL_TABELA.find(x=>x.id===id);
+    f.impl.sel[id] = { on: !t.off, qtd: t.qtd, preco: t.preco };
+  }
+  return f.impl.sel[id];
+}
+/* Rateio: valor líquido (total pago − taxa) distribuído pelos itens marcados, proporcional a preço × qtd.
+   Sem total informado, usa o próprio preço da tabela × qtd. Último item absorve o resto de centavos. */
+function implCalc(){
+  const f = state.form;
+  const rows = IMPL_TABELA.map(t=>{ const s = implSel(t.id); return { t, s, ref: (+s.qtd||0)*(+s.preco||0) }; }).filter(r=>r.s.on && r.ref>0);
+  const taxa = f.impl.taxa===''||f.impl.taxa==null ? 0 : parseBRL(f.impl.taxa);
+  const totalPago = parseBRL(f.impl.total);
+  const somaRef = rows.reduce((a,r)=>a+r.ref,0);
+  const usaTotal = totalPago>0;
+  const liquido = usaTotal ? Math.max(0, totalPago - taxa) : somaRef;
+  let acc = 0;
+  rows.forEach((r,i)=>{
+    r.alloc = (i===rows.length-1) ? round2(liquido-acc) : round2(liquido * r.ref / somaRef);
+    acc = round2(acc + r.alloc);
+  });
+  return { rows, taxa, totalPago, somaRef, usaTotal, liquido, fator: somaRef>0 ? liquido/somaRef : 0 };
+}
+/* Em modo "tabela", f.itens é derivado do checklist (valorOriginal = valor rateado). */
+function syncItens(){
+  const f = state.form;
+  if(f.modoValor!=='tabela') return;
+  f.itens = implCalc().rows.map(r=>({
+    id:'impl-'+r.t.id, categoria:r.t.cat, categoriaCustom: r.t.cat==='Outro' ? r.t.nome : '',
+    marca:'', descricao: r.t.nome + (r.s.qtd>1 ? ' (×'+r.s.qtd+')' : ''),
+    valorOriginal: r.alloc, valorReposicao:'', usarCorrecao:true, indiceAnual:6
+  }));
+}
+function implPanelHtml(){
+  const f = state.form, c = implCalc();
+  const grupos = [...new Set(IMPL_TABELA.map(t=>t.grupo))];
+  return `
+  <div class="field">
+    <label for="impl-total">Valor total pago pelo proprietário (implantação) <span class="tip">— itens + taxa</span></label>
+    <input id="impl-total" placeholder="R$ 0,00 (vazio = usar preços da tabela)" value="${f.impl.total}">
+  </div>
+  <div class="field" style="margin-top:12px">
+    <label for="impl-taxa">Taxa de implantação (limpeza geral com bloqueio + vistoria + fotos)</label>
+    <input id="impl-taxa" placeholder="R$ 400,00" value="${f.impl.taxa}">
+  </div>
+  <div class="notice notice-info" style="margin-top:14px" id="impl-resumo">${implResumoTxt(c)}</div>
+  <div class="tablewrap"><table>
+    <thead><tr><th></th><th>Item</th><th>Qtd.</th><th>Preço unit. ref.</th><th>Valor rateado</th></tr></thead>
+    <tbody>
+    ${grupos.map(g=>`
+      <tr><td colspan="5" style="background:var(--surface-2);font-weight:700;font-size:11px;text-transform:uppercase">${g}</td></tr>
+      ${IMPL_TABELA.filter(t=>t.grupo===g).map(t=>{ const s = implSel(t.id); return `
+      <tr>
+        <td><input type="checkbox" class="impl-on" data-id="${t.id}" ${s.on?'checked':''} style="width:auto"></td>
+        <td style="white-space:normal">${t.nome}</td>
+        <td><input class="impl-qtd" data-id="${t.id}" type="number" min="0" step="1" value="${s.qtd}" style="width:64px"></td>
+        <td><input class="impl-preco" data-id="${t.id}" value="${s.preco}" style="width:92px"></td>
+        <td class="mono" id="impl-alloc-${t.id}">${s.on ? '—' : 'não incluído'}</td>
+      </tr>`; }).join('')}`).join('')}
+    </tbody>
+  </table></div>`;
+}
+function implResumoTxt(c){
+  if(!c.rows.length) return '<span>⚠️</span><div>Marque ao menos um item da tabela.</div>';
+  return c.usaTotal
+    ? `<span>🧮</span><div><b>Rateio do valor total.</b> ${brl(c.totalPago)} pago − taxa de implantação ${brl(c.taxa)} = <b>${brl(c.liquido)}</b> distribuídos entre ${c.rows.length} itens, proporcionalmente a preço de referência × quantidade (fator ${c.fator.toFixed(3).replace('.',',')}× sobre a tabela, soma dos preços de referência ${brl(c.somaRef)}).</div>`
+    : `<span>🧮</span><div><b>Sem valor total informado:</b> usando os preços da tabela × quantidade — soma dos itens ${brl(c.somaRef)} + taxa ${brl(c.taxa)} = ${brl(c.somaRef+c.taxa)} (valor cheio estimado). Informe o valor total pago para ratear sobre o valor real.</div>`;
+}
+function updateImplAlloc(){
+  if(state.form.modoValor!=='tabela') return;
+  const c = implCalc();
+  const r = document.getElementById('impl-resumo'); if(r) r.innerHTML = implResumoTxt(c);
+  IMPL_TABELA.forEach(t=>{
+    const el = document.getElementById('impl-alloc-'+t.id); if(!el) return;
+    const row = c.rows.find(x=>x.t.id===t.id);
+    el.textContent = row ? brl(row.alloc) : (implSel(t.id).on ? '—' : 'não incluído');
+  });
+}
+function valorModoHtml(){
+  const f = state.form;
+  const chips = `
+  <div class="field" style="margin-bottom:14px">
+    <label>Origem do valor pago originalmente</label>
+    <div class="chiprow" id="chip-modo-valor">
+      <button class="chip ${f.modoValor!=='tabela'?'sel':''}" data-val="proprietario">Valor pago pelo proprietário (item a item)</button>
+      <button class="chip ${f.modoValor==='tabela'?'sel':''}" data-val="tabela">Tabela de itens de implantação</button>
+    </div>
+  </div>`;
+  return chips + (f.modoValor==='tabela' ? implPanelHtml() : itensManualHtml());
+}
+function attachImplEvents(){
+  const f = state.form;
+  const $ = id=>document.getElementById(id);
+  const mc = $('chip-modo-valor');
+  if(mc) mc.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    const novo = c.dataset.val;
+    if(novo===f.modoValor || (novo==='proprietario' && f.modoValor!=='tabela')) return;
+    if(novo==='tabela'){ f.itensManual = f.itens; f.modoValor='tabela'; }
+    else { f.modoValor='proprietario'; f.itens = (f.itensManual && f.itensManual.length) ? f.itensManual : [ novoItem() ]; }
+    renderSteps();
+  }));
+  const tot = $('impl-total'); if(tot) tot.addEventListener('input',()=>{ f.impl.total = tot.value; refreshLive(); });
+  const tx = $('impl-taxa'); if(tx) tx.addEventListener('input',()=>{ f.impl.taxa = tx.value; refreshLive(); });
+  document.querySelectorAll('.impl-on').forEach(el=>el.addEventListener('change',()=>{ implSel(el.dataset.id).on = el.checked; refreshLive(); }));
+  document.querySelectorAll('.impl-qtd').forEach(el=>el.addEventListener('input',()=>{ implSel(el.dataset.id).qtd = +el.value||0; refreshLive(); }));
+  document.querySelectorAll('.impl-preco').forEach(el=>el.addEventListener('input',()=>{ implSel(el.dataset.id).preco = parseBRL(el.value); refreshLive(); }));
+}
+
+function itensManualHtml(){
+  const f = state.form;
+  return `
+      <div id="itens-list">
+        ${f.itens.map((it,idx)=>itemRowHtml(it,idx,f.itens.length>1)).join('')}
+      </div>
+      <button type="button" class="btn btn-outline" id="btn-add-item" style="width:100%; margin-top:4px">+ Adicionar outro item</button>
+  `;
+}
+
 /* ------------------------------- RENDER FORM (página única, atualização em tempo real) ------------------------------- */
 function renderSteps(){
   const el = document.getElementById('steps');
   const f = state.form;
+  syncItens();
   let html = '';
 
   {
@@ -576,10 +754,7 @@ function renderSteps(){
     <div class="section-eyebrow"><div class="num">1</div><div class="lbl">Identificação dos bens</div></div>
     <div class="card">
       <p class="hint">Atuamos com devolução/reembolso de múltiplos itens em uma mesma análise. Adicione um item para cada bem envolvido — o valor de referência final soma o resultado de todos.</p>
-      <div id="itens-list">
-        ${f.itens.map((it,idx)=>itemRowHtml(it,idx,f.itens.length>1)).join('')}
-      </div>
-      <button type="button" class="btn btn-outline" id="btn-add-item" style="width:100%; margin-top:4px">+ Adicionar outro item</button>
+      ${valorModoHtml()}
       <div class="notice notice-info" style="margin-top:14px"><span>💡</span><div><b>Como chegamos ao valor de hoje:</b> aplicamos a correção monetária oficial (${RULES.defaultAnnualIndex}% a.a.) sobre o valor pago de cada item para estimar o custo de reposição atual — isso apenas atualiza o preço para hoje, sem representar ganho ou perda real do bem. É a partir desse valor atualizado que a depreciação pelo uso é calculada na próxima etapa.</div></div>
     </div>`;
   }
@@ -952,6 +1127,7 @@ function drawDepreciationCurve(r){
 function findItem(id){ return state.form.itens.find(it=>it.id===id); }
 
 function attachStepEvents(){
+  attachImplEvents();
   const f = state.form;
   const $ = id=>document.getElementById(id);
   const bind = (id,key,transform)=>{ const e=$(id); if(e) e.addEventListener('input', ()=>{ f[key]= transform?transform(e.value):e.value; refreshLive(); }); };
@@ -994,7 +1170,7 @@ function attachStepEvents(){
   bind('in-dano-pct','danoPct'); bind('in-dano-valor','danoValor'); bind('in-dano-valor2','danoValor');
 }
 
-function refreshLive(){ renderMemoria(); }
+function refreshLive(){ syncItens(); updateImplAlloc(); renderMemoria(); }
 
 document.getElementById('btn-print').addEventListener('click', ()=>{ window.print(); });
 
